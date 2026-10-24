@@ -5,6 +5,7 @@
 - Changed: replaced the pale palette with charcoal and deep-green surfaces, added branded navigation and accessible motion, and reshaped existing text, receipt and voice draft intake as a conversational assistant. The dark chat takes visual cues from the supplied WhatsApp references through muted doodle wallpaper and contrasting bubbles while retaining TinkerSpend branding. The chat uses the same authenticated draft APIs and review-before-save workflow; suggested prompts only fill the composer, so the user chooses when to send a request. Added an explicit Account setting for AI processing with an OpenAI data and credit disclosure.
 - Accessibility and cost: reduced-motion and keyboard focus states are respected. AI extraction follows the account setting, quota and private Worker key; deterministic text parsing remains available when AI is off or unavailable. No model, prompt, dependency, remote asset or tracking changes were added.
 - Validation: lint, full typecheck, production web build, 68 domain tests and 48 API tests pass. Playwright could not launch its bundled Chromium (`spawn UNKNOWN`); retries using system browsers stalled before results, so browser behavior remains unverified in this session.
+- Deployment: published production Worker version `155b12a3-b6d9-4248-ab3d-37e4c1ca8242` and the matching static client to `https://expenses.tinkercraft.in`. Homepage, CSS/JS assets and production API health all returned 200/healthy. No OpenAI request was made during deployment or smoke checks.
 
 ## 2026-10-25 — Demo presentation surface
 
