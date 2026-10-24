@@ -26,3 +26,5 @@ button:disabled { opacity: .5; cursor: not-allowed; }
 .muted { color: #64748b; font-size: 13px; } .pos { color: #15803d; }
 .badge { display: inline-block; font-size: 12px; padding: 2px 8px; border-radius: 999px; background: #fef3c7; margin-top: 4px; } .badge.ignored { background: #e2e8f0; }
 button.danger { color: #b91c1c; border-color: #b91c1c; } button.link { background: none; border: none; color: #0f766e; text-decoration: underline; min-height: auto; padding: 0; }
+
+.suggestion { margin: 0.25rem 0; font-size: 0.9rem; }

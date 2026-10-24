@@ -112,12 +112,15 @@ class SyncWorker(ctx: Context, params: WorkerParameters) : Worker(ctx, params) {
                 r.status == 200 || r.status == 404 || r.status == 409 -> dao.deleteJob(j.draftId)
                 r.status == 401 || r.status == 403 -> { prefs.authPaused = true; return Result.success() }
                 r.status == 429 -> dao.deferJob(j.draftId, now + (r.retryAfterSec ?: 3600) * 1000, "quota")
-                r.status >= 500 -> dao.deferJob(j.draftId, now + 600_000, "http_${r.status}")
+                r.status >= 500 && j.attempts >= MAX_ENRICH_ATTEMPTS -> dao.failJob(j.draftId, "http_${r.status}")
+                r.status >= 500 -> dao.deferJob(j.draftId, now + (r.retryAfterSec ?: 600) * 1000, "http_${r.status}")
                 else -> dao.failJob(j.draftId, "http_${r.status}")
             }
         }
         return Result.success()
     }
+
+    private companion object { const val MAX_ENRICH_ATTEMPTS = 5 }
 
     private fun cleanup() {
         val now = System.currentTimeMillis()

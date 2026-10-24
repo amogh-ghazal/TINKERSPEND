@@ -10,6 +10,7 @@ export function Ledger({ month, reviewOnly, onChanged }: { month: string; review
   const [err, setErr] = useState<string | null>(null);
   const [editing, setEditing] = useState<string | null>(null);
   const [refunding, setRefunding] = useState<string | null>(null);
+  const [busy, setBusy] = useState<string | null>(null);
   const load = useCallback(() => { setErr(null); api<{ items: Txn[] }>("GET", `/transactions?month=${month}&limit=100`).then((r) => setItems(r.items), (e) => setErr(e.message)); }, [month]);
   useEffect(load, [load]);
   const changed = () => { setEditing(null); setRefunding(null); load(); onChanged(); };
@@ -18,6 +19,20 @@ export function Ledger({ month, reviewOnly, onChanged }: { month: string; review
   async function del(t: Txn) {
     if (!confirm(`Delete ${inr(t.amount_paise)} ${t.counterparty ?? ""}?`)) return;
     try { await api("DELETE", `/transactions/${t.id}?version=${t.version}`); changed(); } catch (e) { setErr((e as Error).message); }
+  }
+  async function suggest(t: Txn) {
+    setBusy(t.id); setErr(null);
+    try {
+      const r = await api<{ status: string; reason?: string }>("POST", "/ai/classify", { draft_id: t.id, operation_id: newOperationId() });
+      if (r.status === "needs_review") setErr("No confident suggestion; please categorize it yourself.");
+      if (r.status === "skipped" && r.reason === "ai_disabled") setErr("AI suggestions are turned off in settings.");
+      load();
+    } catch (e) { setErr((e as Error).message); } finally { setBusy(null); }
+  }
+  async function accept(t: Txn) {
+    const s = t.suggestion!;
+    try { await api("PATCH", `/transactions/${t.id}`, { version: t.version, kind: s.kind === "unknown" ? undefined : s.kind, category_id: s.category_id, review_state: "confirmed" }); changed(); }
+    catch (e) { setErr((e as Error).message); }
   }
   async function confirmTxn(t: Txn, review_state: "confirmed" | "ignored") {
     try { await api("PATCH", `/transactions/${t.id}`, { version: t.version, review_state }); changed(); } catch (e) { setErr((e as Error).message); }
@@ -36,12 +51,22 @@ export function Ledger({ month, reviewOnly, onChanged }: { month: string; review
               <div>
                 <strong>{t.counterparty || t.description || KIND_LABEL[t.kind]}</strong>
                 <div className="muted">{t.effective_local_date} · {KIND_LABEL[t.kind]} · {STATUS_LABEL[t.payment_status]}{t.kind === "expense" && t.allocations.length ? ` · ${t.allocations.map((a) => categoryName(a.category_id)).join(", ")}` : ""} · {t.source}</div>
+                {t.suggestion && (
+                  <p className="suggestion" data-testid="suggestion">
+                    Suggested: <strong>{categoryName(t.suggestion.category_id)}</strong> ({KIND_LABEL[t.suggestion.kind]}){t.suggestion.reason ? ` — ${t.suggestion.reason}` : ""}
+                    <span className="muted"> · {t.suggestion.model === "rule" ? "your rule" : t.suggestion.model === "merchant_map" ? "known merchant" : "AI suggestion, not confirmed"}</span>
+                  </p>
+                )}
                 {t.review_state !== "confirmed" && <span className={`badge ${t.review_state}`}>{t.review_state === "needs_review" ? "Needs review" : "Ignored"}</span>}
               </div>
               <strong className={t.direction === "in" || t.kind === "refund" ? "pos" : ""}>{t.kind === "refund" ? "−" : ""}{inr(t.amount_paise)}</strong>
             </div>
             <div className="row">
               {t.review_state === "needs_review" && t.kind !== "unknown" && <button onClick={() => confirmTxn(t, "confirmed")}>Confirm</button>}
+              {t.review_state === "needs_review" && t.suggestion && t.suggestion.kind !== "unknown" && <button onClick={() => accept(t)}>Accept suggestion</button>}
+              {t.review_state === "needs_review" && !t.suggestion && (t.kind === "unknown" || t.kind === "expense") && t.direction !== "incoming" && (
+                <button className="secondary" disabled={busy === t.id} title="Sends only the payee name, amount and payment status to OpenAI" onClick={() => suggest(t)}>{busy === t.id ? "Asking…" : "Suggest category"}</button>
+              )}
               {t.review_state === "needs_review" && <button className="secondary" onClick={() => confirmTxn(t, "ignored")}>Ignore</button>}
               <button className="secondary" onClick={() => setEditing(editing === t.id ? null : t.id)}>Edit</button>
               {t.kind === "expense" && t.payment_status === "successful" && <button className="secondary" onClick={() => setRefunding(refunding === t.id ? null : t.id)}>Refund</button>}

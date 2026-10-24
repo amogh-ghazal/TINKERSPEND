@@ -7,6 +7,8 @@ export interface Env {
   OPENAI_API_KEY?: string;
   OPENAI_TRANSCRIBE_MODEL: string;
   OPENAI_EXTRACT_MODEL: string;
+  OPENAI_CATEGORY_MODEL?: string;
+  AI_USER_CLASSIFY_LIMIT?: string;
   AI_DAILY_GLOBAL_LIMIT: string;
   SESSION_DAYS: string;
   /** Test-only: replaces Google JWKS verification. Never set in deployed environments. */

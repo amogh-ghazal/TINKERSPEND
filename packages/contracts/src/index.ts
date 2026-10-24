@@ -157,6 +157,9 @@ export const MediaDraftRequest = z.object({
   duration_ms: z.number().int().positive().max(LIMITS.audioSeconds * 1000 + 500).optional(),
 }).strict();
 
+export const ClassifyInput = z.object({ draft_id: Uuid, operation_id: Uuid });
+export type ClassifyInput = z.infer<typeof ClassifyInput>;
+
 export const CategoryRuleInput = z.object({
   counterparty: z.string().min(1).max(120),
   category_id: CategoryIdSchema,

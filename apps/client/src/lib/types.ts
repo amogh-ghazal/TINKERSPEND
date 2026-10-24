@@ -6,6 +6,7 @@ export interface Txn {
   counterparty: string | null; description: string | null; source: string; provenance: string;
   original_transaction_id: string | null; merged_into_id: string | null; user_edited_fields: string[]; version: number;
   allocations: { category_id: CategoryId; amount_paise: number }[]; created_at: number; updated_at: number;
+  suggestion: { category_id: CategoryId; kind: "expense" | "transfer" | "unknown"; reason: string | null; model: string } | null;
 }
 export interface Me { id: string; email: string; timezone: string; ai_enabled?: boolean; client?: string }
 export interface Summary {

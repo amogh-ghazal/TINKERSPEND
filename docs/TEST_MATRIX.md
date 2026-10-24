@@ -26,3 +26,12 @@
 | Android (emulator) | Network failure (host unresolvable) then user "Sync now" | events kept pending; REPLACE policy runs sync immediately instead of waiting behind backoff | pass after fix (first run waited ~60 s in backoff) | same | 2026-10-24 |
 | Domain | Counterparty stops at status words ("Metro Mart is pending" → "Metro Mart") | as specified | pass (found on emulator run; 37/37) | vitest | 2026-10-24 |
 | Android real device → deployed Worker | Same as above with real payment app and Cloudflare deployment | — | **pending**: owner device + Cloudflare credentials | — | — |
+| API (local) — M3 AI classify, OpenAI **mocked at fetch** | Suggestion stored but txn stays `needs_review`/`unknown`; request has `store:false`, strict json_schema, no refs; replay same op → no 2nd call; op reuse for other txn → 409; accept → suggestion cleared | as spec §12/§14 | pass | vitest-pool-workers | 2026-10-24 |
+| API (local) — M3 | Saved user rule wins before AI (0 provider calls) | as spec | pass | same | 2026-10-24 |
+| API (local) — M3 | Invalid category / refusal / incomplete → `needs_review`, no suggestion | as spec | pass | same | 2026-10-24 |
+| API (local) — M3 | Timeout → `outcome_unknown`; same op retried → no 2nd call; quota slot kept (conservative) | as spec | pass | same | 2026-10-24 |
+| API (local) — M3 | Provider `insufficient_quota` → 503 retryable, Retry-After 3600; record stays in review | as spec | pass | same | 2026-10-24 |
+| API (local) — M3 | User quota full → 429 before upstream; global full → 429 and user slot rolled back; freed quota → same op proceeds once | as spec §16 | pass | same | 2026-10-24 |
+| API (local) — M3 | 8 concurrent classify at user count 47/50 → exactly 3 upstream calls, 5×429, counter 50 | as spec §16 | pass (Miniflare D1; deployed D1 pending) | same | 2026-10-24 |
+| API (local) — M3 | Cross-user classify → 404; AI disabled → skipped, 0 calls | as spec | pass | same | 2026-10-24 |
+| Real OpenAI classification | Model access, structured output, real latency/usage | — | **pending**: needs OPENAI_API_KEY; `gpt-4.1-mini` is an unverified placeholder | — | — |

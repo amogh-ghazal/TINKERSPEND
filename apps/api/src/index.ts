@@ -5,6 +5,7 @@ import { ApiError, errorResponse, uuid, now, parseJson } from "./util";
 import { authRoutes, logoutRoute, requireAuth } from "./auth";
 import { ledger } from "./ledger";
 import { ingest } from "./ingest";
+import { ai } from "./ai";
 import { SettingsPatch } from "@tinkerspend/contracts";
 import { isValidTimeZone } from "@tinkerspend/domain";
 
@@ -61,7 +62,7 @@ api.delete("/devices/:id", async (c) => {
 });
 api.delete("/account", async (c) => {
   const u = c.get("user");
-  const tables = ["allocations", "txn_refs", "source_events", "drafts", "category_rules", "operations", "usage_counters", "transactions", "sessions", "devices"];
+  const tables = ["allocations", "txn_refs", "source_events", "drafts", "category_rules", "operations", "ai_operations", "txn_suggestions", "usage_counters", "transactions", "sessions", "devices"];
   await c.env.DB.batch([
     ...tables.map((t) => c.env.DB.prepare(`DELETE FROM ${t} WHERE user_id = ?`).bind(u.id)),
     c.env.DB.prepare("DELETE FROM users WHERE id = ?").bind(u.id),
@@ -70,6 +71,7 @@ api.delete("/account", async (c) => {
 });
 api.route("/", ledger);
 api.route("/", ingest);
+api.route("/", ai);
 
 app.route("/api/v1", api);
 

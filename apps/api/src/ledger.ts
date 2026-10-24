@@ -50,13 +50,25 @@ async function allocationsFor(db: D1Database, userId: string, ids: string[]) {
   return map;
 }
 
-export function present(t: TxnRow, allocs: Alloc[]) {
+export interface SuggestionRow { category: CategoryId; kind: string; reason: string | null; model: string }
+
+export async function suggestionsFor(db: D1Database, userId: string, ids: string[]) {
+  const map = new Map<string, SuggestionRow>();
+  if (ids.length === 0) return map;
+  const rs = await db.prepare(`SELECT transaction_id, category, kind, reason, model FROM txn_suggestions WHERE user_id = ? AND transaction_id IN (${ids.map(() => "?").join(",")})`)
+    .bind(userId, ...ids).all<SuggestionRow & { transaction_id: string }>();
+  for (const r of rs.results) map.set(r.transaction_id, { category: r.category, kind: r.kind, reason: r.reason, model: r.model });
+  return map;
+}
+
+export function present(t: TxnRow, allocs: Alloc[], suggestion?: SuggestionRow | null) {
   return {
     id: t.id, kind: t.kind, payment_status: t.payment_status, review_state: t.review_state,
     amount_paise: t.amount_paise, amount: paiseToDecimalString(t.amount_paise), effective_local_date: t.occurred_on, direction: t.direction,
     counterparty: t.counterparty, description: t.note, source: t.source, provenance: t.provenance, original_transaction_id: t.original_txn_id,
     merged_into_id: t.merged_into_id, user_edited_fields: JSON.parse(t.user_edited_fields) as string[], version: t.version,
     allocations: allocs.map((a) => ({ category_id: a.category, amount_paise: a.amountPaise })), created_at: t.created_at, updated_at: t.updated_at,
+    suggestion: t.review_state === "needs_review" && suggestion ? { category_id: suggestion.category, kind: suggestion.kind, reason: suggestion.reason, model: suggestion.model } : null,
   };
 }
 
@@ -141,8 +153,9 @@ ledger.get("/transactions", async (c) => {
   const rs = await c.env.DB.prepare(`SELECT t.* FROM transactions t WHERE ${where.join(" AND ")} ORDER BY t.occurred_on DESC, t.id DESC LIMIT ?`).bind(...args, q.data.limit + 1).all<TxnRow>();
   const rows = rs.results.slice(0, q.data.limit);
   const allocs = await allocationsFor(c.env.DB, u.id, rows.map((r) => r.id));
+  const sugg = await suggestionsFor(c.env.DB, u.id, rows.filter((r) => r.review_state === "needs_review").map((r) => r.id));
   const last = rows[rows.length - 1];
-  return c.json({ items: rows.map((r) => present(r, allocs.get(r.id) ?? [])), next_cursor: rs.results.length > q.data.limit && last ? `${last.occurred_on}|${last.id}` : null });
+  return c.json({ items: rows.map((r) => present(r, allocs.get(r.id) ?? [], sugg.get(r.id))), next_cursor: rs.results.length > q.data.limit && last ? `${last.occurred_on}|${last.id}` : null });
 });
 
 ledger.get("/transactions/:id", async (c) => {
@@ -151,7 +164,7 @@ ledger.get("/transactions/:id", async (c) => {
   const refs = await c.env.DB.prepare("SELECT namespace, value FROM txn_refs WHERE user_id = ? AND transaction_id = ?").bind(u.id, t.id).all();
   const refunds = await c.env.DB.prepare("SELECT id, amount_paise, occurred_on FROM transactions WHERE user_id = ? AND original_txn_id = ? AND deleted_at IS NULL").bind(u.id, t.id).all();
   const evidence = await c.env.DB.prepare("SELECT source_package, posted_at, outcome FROM source_events WHERE user_id = ? AND transaction_id = ? ORDER BY posted_at").bind(u.id, t.id).all();
-  return c.json({ transaction: present(t, (await allocationsFor(c.env.DB, u.id, [t.id])).get(t.id) ?? []), references: refs.results, refunds: refunds.results, evidence: evidence.results });
+  return c.json({ transaction: present(t, (await allocationsFor(c.env.DB, u.id, [t.id])).get(t.id) ?? [], (await suggestionsFor(c.env.DB, u.id, [t.id])).get(t.id)), references: refs.results, refunds: refunds.results, evidence: evidence.results });
 });
 
 ledger.patch("/transactions/:id", async (c) => {
@@ -192,6 +205,7 @@ ledger.patch("/transactions/:id", async (c) => {
     for (const a of allocs) stmts.push(c.env.DB.prepare("INSERT INTO allocations (id, user_id, transaction_id, category, amount_paise, category_source) VALUES (?,?,?,?,?,'user')").bind(uuid(), u.id, t.id, a.category, a.amountPaise));
     if (b.category_id) edited.add("category");
   }
+  if (review || b.category_id) stmts.push(c.env.DB.prepare("DELETE FROM txn_suggestions WHERE user_id = ? AND transaction_id = ?").bind(u.id, t.id));
   if (b.apply_rule && b.category_id && (b.counterparty ?? t.counterparty)) {
     stmts.push(c.env.DB.prepare("INSERT INTO category_rules (id, user_id, match_type, pattern, category, kind, created_at) VALUES (?,?,'counterparty_exact',?,?,?,?) ON CONFLICT(user_id, match_type, pattern) DO UPDATE SET category = excluded.category, kind = excluded.kind")
       .bind(uuid(), u.id, normalizeMerchant((b.counterparty ?? t.counterparty)!), b.category_id, kind, now()));

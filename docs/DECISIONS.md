@@ -29,3 +29,11 @@
 ## Accounting
 - Integer paise; strict decimal parser; refunds counted in month received; spending counted only via allocations.
 - Refund allocation default: proportional to original allocations with largest-remainder rounding (ties to earliest allocation).
+
+## M3 classification (2026-10-24)
+- Priority: explicit user edit → saved user rule → tested merchant map → AI suggestion → review. AI output is stored in `txn_suggestions` only; it never changes `kind`, `review_state` or allocations. The user accepts explicitly.
+- `ai_operations` implements the §14 state machine. Failures that happened before an upstream call (quota, missing key, provider 429 rate limit) are re-claimable under the same operation ID; `outcome_unknown` is never retried automatically. At most 3 upstream-started attempts per transaction.
+- Quotas: atomic conditional upserts (`ON CONFLICT … DO UPDATE … WHERE count < limit`); zero changed rows means denied. The user slot is reserved first and compensated if the global slot is denied. Defaults: 50 classify/user/day, 100 AI calls/day global (`AI_USER_CLASSIFY_LIMIT`, `AI_DAILY_GLOBAL_LIMIT`).
+- Data sent: payee name, amount, direction, payment status, short note. No references, VPAs or history. `store: false` (controls response storage only; not a zero-retention guarantee).
+- Model: `OPENAI_CATEGORY_MODEL` falls back to `OPENAI_EXTRACT_MODEL` (`gpt-4.1-mini` placeholder). **Not verified** against the owner's account; must be confirmed when OPENAI_API_KEY is provided.
+- Native enrichment jobs: 5xx deferred (Retry-After honoured) and failed after 5 attempts, so a missing key cannot cause an unbounded loop.
