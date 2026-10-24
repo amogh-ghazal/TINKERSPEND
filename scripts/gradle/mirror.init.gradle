@@ -1,0 +1,9 @@
+// Maven Central returned HTTP 429 to this VM; prefer Google's public Maven Central mirror.
+def mirror = "https://maven-central.storage-download.googleapis.com/maven2/"
+beforeSettings { settings ->
+  settings.pluginManagement.repositories { maven { url mirror } }
+}
+allprojects {
+  buildscript { repositories { maven { url mirror } } }
+  repositories { maven { url mirror } }
+}

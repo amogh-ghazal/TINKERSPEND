@@ -58,3 +58,6 @@
 | Release APK — developer install (physical phone) | — | — | **pending owner phone / USB debugging** | — | — |
 | Release APK — public install | download link → install → Play Protect outcome recorded separately | — | **pending owner phone**; Play Protect block would be a distribution limitation, not a launch | — | — |
 | Production deploy | Worker + D1 Free at expenses.tinkercraft.in (only if hostname free), migrations, smoke | — | **pending CLOUDFLARE_API_TOKEN / ACCOUNT_ID** | — | — |
+| Voice — spoken-number amounts | "two hundred fifty" transcript + model 250 | should keep 250 or ask user | **open finding**: `amountInSource` matches digits only → amount dropped (`amount_not_in_source`); untested | — | — |
+| Receipt — notification-origin match | receipt vs txn created by `notifications/batch` | one ledger expense after attach | **not tested** (only manual-origin txn tested) | — | — |
+| Debug APK signer | debug build signed by shared debug key 43:31:…:9A:22 | — | **fail on VM build**: signed by VM default key 90:27:…:CD:5B (TS_DEBUG_KEYSTORE unset) | build VM | 2026-10-24 |

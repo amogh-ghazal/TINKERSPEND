@@ -31,6 +31,13 @@ _Status legend: **implemented** (code exists), **tested** (automated/manual evid
 
 Totals at this commit: domain 45/45, API 38/38, browser E2E 10/10; lint/typecheck clean; source + web bundle secret scan clean.
 
+## Review findings (open, 2026-10-24)
+- Spoken-number amounts may be rejected by `amountInSource` (voice UX; no wrong amounts) — investigate.
+- Receipt UI click-through has no verified browser test.
+- Notification-origin receipt matching has no verified test (only manual-origin).
+- Debug APK built without `TS_DEBUG_KEYSTORE` is signed by the VM default key, not the shared debug key registered for OAuth.
+See docs/CODEX_HANDOFF.md.
+
 ## Open failures
 - Maven Central returned HTTP 429 to the build VM; Gradle uses Google's public Maven Central mirror via `~/.gradle/init.d/mirror.gradle` (VM-local, not in repo).
 - Capacitor 8 Android requires JDK 21 (VM had 17).
