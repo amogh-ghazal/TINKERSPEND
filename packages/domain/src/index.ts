@@ -7,3 +7,4 @@ export * from "./reconcile";
 export * from "./receipt";
 export * from "./csv";
 export * from "./statements";
+export * from "./spoken-money";

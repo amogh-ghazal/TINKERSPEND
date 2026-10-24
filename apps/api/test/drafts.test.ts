@@ -50,10 +50,10 @@ describe("text drafts", () => {
     expect(again.json.replayed).toBe(true);
     const list = await call("GET", "/api/v1/drafts", { token: a.token });
     expect(list.json.items.map((x: { id: string }) => x.id)).toEqual([d2.id]);
-    const row = await E.DB.prepare("SELECT payload FROM drafts WHERE id = ?").bind(d1.id).first();
+    const row = await E.DB.prepare("SELECT payload FROM drafts WHERE id = ?").bind(d1.id).first<{ payload: string }>();
     expect(JSON.parse(row!.payload).input_text).toBeUndefined(); // source text not retained after save
     expect((await call("POST", `/api/v1/drafts/${d2.id}/discard`, { token: a.token })).status).toBe(200);
-    const row2 = await E.DB.prepare("SELECT status, payload FROM drafts WHERE id = ?").bind(d2.id).first();
+    const row2 = await E.DB.prepare("SELECT status, payload FROM drafts WHERE id = ?").bind(d2.id).first<{ status: string; payload: string }>();
     expect(row2!.status).toBe("ignored");
     expect(JSON.parse(row2!.payload).input_text).toBeNull();
   });
@@ -101,6 +101,17 @@ describe("text drafts", () => {
 });
 
 describe("voice drafts", () => {
+  it("validates spoken amounts independently and rejects balance digits or invented amounts", async () => {
+    const a = await loginAndroid("sub-v-words", "vwords@example.com");
+    mockOpenAI((url) => url.endsWith("/audio/transcriptions")
+      ? Response.json({ text: "Lunch two hundred fifty, balance Rs 4321, and some tea" })
+      : responsesOk({ expenses: [exp({ amount: "250", description: "lunch" }), exp({ amount: "4321", description: "tea" }), exp({ amount: "900", description: "snacks" })] }));
+    const r = await voice(a.token);
+    expect(r.status).toBe(201);
+    expect(r.json.drafts.map((d: { entry: { amount: string | null } }) => d.entry.amount)).toEqual(["250.00", null, null]);
+    expect(r.json.drafts[1].assumptions).toContain("amount_not_in_source");
+    expect(r.json.drafts[2].assumptions).toContain("amount_not_in_source");
+  });
   it("transcribes then extracts; transcript returned and editable; nothing committed", async () => {
     const a = await loginAndroid("sub-v-1", "v1@example.com");
     let form: FormData | null = null;

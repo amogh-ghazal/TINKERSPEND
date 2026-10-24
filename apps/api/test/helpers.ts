@@ -1,6 +1,6 @@
 import { env, exports } from "cloudflare:workers";
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const E = env as any;
+import type { Env } from "../src/env";
+export const E = env as unknown as Env;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const worker = (exports as any).default as { fetch(r: Request): Promise<Response> };
 const BASE = "https://expenses.test";

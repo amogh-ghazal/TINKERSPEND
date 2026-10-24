@@ -242,7 +242,7 @@ function DraftCard({ d, onChanged, onSaved, onReextract }: { d: Draft; onChanged
         </fieldset>
       )}
       {d.assumptions.filter((a) => NOTE[a]).map((a) => <p key={a} className="warn">{NOTE[a]}</p>)}
-      <p className="muted">{d.source === "voice" ? "From voice" : "From text"} · {d.extraction === "ai" ? "AI-extracted" : "parsed without AI"}{d.input_text ? ` · “${d.input_text}”` : ""}</p>
+      <p className="muted">{d.source === "voice" ? "From voice" : d.source === "receipt" ? "From receipt" : "From text"} · {d.extraction === "ai" ? "AI-extracted" : "parsed without AI"}{d.input_text ? ` · “${d.input_text}”` : ""}</p>
       {d.transcript !== null && (
         <details><summary>Transcript</summary>
           <textarea rows={2} value={transcript} onChange={(x) => setTranscript(x.target.value)} aria-label="Transcript" />

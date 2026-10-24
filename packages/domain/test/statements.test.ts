@@ -31,7 +31,7 @@ describe("parseExpenseStatement", () => {
     expect(r[0]!.amountPaise).toBe(49900);
   });
   it("keeps unclear or missing amounts null instead of guessing", () => {
-    const [a] = parseExpenseStatement("lunch two hundred", REF);
+    const [a] = parseExpenseStatement("lunch some money", REF);
     expect(a!.amountPaise).toBeNull();
     expect(a!.assumptions).toContain("amount_missing");
     const [b] = parseExpenseStatement("snacks 40 50", REF);

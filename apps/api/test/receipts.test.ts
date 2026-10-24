@@ -27,6 +27,32 @@ const summary = async (token: string) => (await call("GET", `/api/v1/summary?mon
 afterEach(() => vi.restoreAllMocks());
 
 describe("receipt drafts", () => {
+  it("attaches a receipt to a notification-origin payment without changing totals or creating a second expense", async () => {
+    const a = await loginAndroid("sub-r-notification", "rnotification@example.com");
+    const ingested = await call("POST", "/api/v1/notifications/batch", { token: a.token, body: {
+      device_install_id: a.installId, events: [{
+        event_id: uuid(), source_package: "in.tinkercraft.tinkerspend.fixture", source_key_hash: "receipt-notification",
+        posted_at: REF, captured_at: Date.now(), content_hash: "a".repeat(64), parser_version: "kt-1",
+        title: "Payment successful", text: "Paid Rs. 180.00 to Cafe Coffee Day. UPI Ref No 412345678901",
+        is_current_import: false, timezone: "Asia/Kolkata",
+      }],
+    } });
+    expect(ingested.status).toBe(200);
+    const id = ingested.json.acks[0].transaction_id;
+    expect(id).toBeTruthy();
+    mockOpenAI(() => ok(rc({ merchant: "Cafe Coffee Day", total: "180", line_items: [{ description: "Lunch", amount: "180", category: "food_drinks" }] })));
+    const d = (await receipt(a.token)).json.drafts[0];
+    const matches = await call("GET", `/api/v1/drafts/${d.id}/matches`, { token: a.token });
+    expect(matches.json.items.map((x: { transaction: { id: string } }) => x.transaction.id)).toContain(id);
+    const before = await summary(a.token);
+    expect((await commit(a.token, d, { attach_to_transaction_id: id })).status).toBe(200);
+    expect(await summary(a.token)).toEqual(before);
+    const ledger = await call("GET", `/api/v1/transactions?month=${TODAY.slice(0, 7)}`, { token: a.token });
+    expect(ledger.json.items).toHaveLength(1);
+    expect(ledger.json.items[0]).toMatchObject({ id, source: "notification", amount: "180.00", receipt_draft_id: d.id });
+    expect((await call("POST", `/api/v1/drafts/${d.id}/detach`, { token: a.token })).status).toBe(200);
+    expect(await summary(a.token)).toEqual(before);
+  });
   it("₹300 receipt split ₹200 groceries + ₹100 household → one transaction, two allocations; image sent as data URL", async () => {
     const a = await loginAndroid("sub-r-1", "r1@example.com");
     const calls = mockOpenAI(() => ok(rc({ total: "300.00", line_items: [{ description: "Rice", amount: "200.00", category: "groceries" }, { description: "Detergent", amount: "100.00", category: "household" }] })));

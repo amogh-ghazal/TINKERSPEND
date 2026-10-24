@@ -1,5 +1,7 @@
 # Codex handoff — TinkerSpend (checkpoint 2026-10-24)
 
+> Historical Devin checkpoint at `cb9b687`. Codex has since continued at the owner's explicit request. Read the current `PROGRESS.md`, root `CHANGELOG.md`/`AI_USAGE.md` and README first. Monetary-word and receipt browser/reconciliation gaps below have since received fixes/tests; the current package manager is pnpm 11.25.0. Physical/live checks and signing backup remain pending unless newer evidence explicitly records otherwise.
+
 Branch `devin/1792854130-m0-foundation`, PR https://github.com/amogh-ghazal/TINKERSPEND/pull/1 (open, not merged). Spec: `docs/EXECUTION_SPEC.md` (authoritative). Status: `docs/PROGRESS.md`, `docs/TEST_MATRIX.md`, decisions `docs/DECISIONS.md`, costs `docs/COSTS.md`, owner actions `docs/OWNER_ACTIONS.md`.
 
 **Nothing is deployed. No real device, real payment app, real Google sign-in, Cloudflare account or OpenAI key has been used yet.**

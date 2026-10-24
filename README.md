@@ -4,6 +4,8 @@ Android expense tracker that captures payment notifications from apps you select
 
 Status, evidence and what is still unverified: `docs/PROGRESS.md`, `docs/TEST_MATRIX.md`, `docs/evidence/`. Owner actions still needed: `docs/OWNER_ACTIONS.md`.
 
+Owner: Amogh Suresh (@amogh-ghazal). Primary hackathon track: **Kill the Busywork**. [Submission preparation](SUBMISSION.md), [AI usage](AI_USAGE.md), [change log](CHANGELOG.md), [screenshots and evidence](docs/evidence/README.md), and [organizer-template provenance](docs/TEMPLATE_PROVENANCE.md). The existing repository history is preserved; it was not originally created through GitHub's template button.
+
 ## Layout
 
 | Path | What |
@@ -18,7 +20,7 @@ Status, evidence and what is still unverified: `docs/PROGRESS.md`, `docs/TEST_MA
 
 ## Setup
 
-Requires Node 22, pnpm 10; for Android also JDK 21 and Android SDK 36.
+Requires Node 22+ (22 recommended) and pnpm 11.25.0. The Codex Windows checkpoint passed under Node 24.22.1 / pnpm 11.25.0; Devin's historical handoff used pnpm 10. For Android: JDK 21 and Android SDK 36. The installer allows only the required esbuild/workerd native build scripts; release-age protection remains enabled in the local package manager. Development type packages and `ignore` are pinned to versions accepted by that policy.
 
 ```bash
 pnpm run setup        # pnpm install --frozen-lockfile + toolchain checks
@@ -28,6 +30,24 @@ pnpm test:api         # Worker + D1 in local workerd (OpenAI mocked)
 pnpm test:e2e         # browser, desktop + Pixel 7 viewport
 ```
 
+On Windows, use these direct commands instead of the Bash setup wrapper:
+
+```powershell
+pnpm install --frozen-lockfile
+pnpm exec playwright install chromium --no-shell
+pnpm lint
+pnpm typecheck
+pnpm test
+pnpm test:api
+pnpm test:e2e
+```
+
+If bundled Chromium cannot launch on a particular machine, use an installed Chrome in an isolated test profile: `$env:TS_BROWSER_CHANNEL='chrome'; pnpm test:e2e`. This is how the Windows browser checks were verified. It does not attach to personal tabs.
+
+The E2E command starts its own local Worker/D1 and static app, creates a fresh test-only database under ignored `.wrangler/`, and runs the demo interactions without keys. Do not deploy its insecure test identity verifier. Receipt browser tests mock extraction/draft responses; notification-to-receipt matching is tested separately in the API suite with local D1.
+
+Supported English monetary words such as `lunch two hundred and fifty` are normalized deterministically, including Indian lakh/crore grammar and decimal digits. Invalid/approximate phrases remain unparsed; unsupported speech and real transcription accuracy still require evaluation. Drafts remain editable and require explicit Save.
+
 ## Android
 
 ```bash
@@ -36,6 +56,8 @@ pnpm android:test     # JVM unit tests
 TS_RELEASE_KEYSTORE=/path/release.jks ANDROID_RELEASE_KEYSTORE_PASSWORD=... pnpm android:release
 pnpm release:check path/to/app-release.apk   # signer, v2, no debuggable/cleartext, no secrets
 ```
+
+Windows equivalent after setting `JAVA_HOME` (JDK 21) and `ANDROID_HOME` (SDK): `pnpm android:sync`, then `cd apps/client/android` and `.\gradlew.bat :app:testDebugUnitTest :app:assembleDebug :fixture:assembleDebug`. Set `TS_DEBUG_KEYSTORE` to the privately backed-up shared debug key when testing Google sign-in; a default local debug signer will have a different OAuth fingerprint. Signing keys/passwords must not be committed.
 
 The release keystore and password live only in owner-controlled secret storage (never in the repo). Release signer SHA-1: `81:48:00:D8:3A:E4:4B:A9:04:99:EE:2F:52:5D:7C:26:61:81:B8:D8`. Losing the keystore means existing installs cannot be updated; keep the backup.
 

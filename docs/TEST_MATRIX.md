@@ -58,6 +58,21 @@
 | Release APK — developer install (physical phone) | — | — | **pending owner phone / USB debugging** | — | — |
 | Release APK — public install | download link → install → Play Protect outcome recorded separately | — | **pending owner phone**; Play Protect block would be a distribution limitation, not a launch | — | — |
 | Production deploy | Worker + D1 Free at expenses.tinkercraft.in (only if hostname free), migrations, smoke | — | **pending CLOUDFLARE_API_TOKEN / ACCOUNT_ID** | — | — |
-| Voice — spoken-number amounts | "two hundred fifty" transcript + model 250 | should keep 250 or ask user | **open finding**: `amountInSource` matches digits only → amount dropped (`amount_not_in_source`); untested | — | — |
-| Receipt — notification-origin match | receipt vs txn created by `notifications/batch` | one ledger expense after attach | **not tested** (only manual-origin txn tested) | — | — |
+| Voice — spoken-number amounts | "two hundred fifty" transcript + model 250 | should keep 250 or ask user | pass: strict deterministic words parser supports tested grammar; balance/invented outputs dropped; transcription mocked | Codex Windows, domain/API | 2026-10-24 |
+| Receipt — notification-origin match | receipt vs txn created by `notifications/batch` | one ledger expense after attach | pass: local D1, one transaction, unchanged totals after attach and detach | Codex Windows; synthetic notification, mocked vision | 2026-10-24 |
 | Debug APK signer | debug build signed by shared debug key 43:31:…:9A:22 | — | **fail on VM build**: signed by VM default key 90:27:…:CD:5B (TS_DEBUG_KEYSTORE unset) | build VM | 2026-10-24 |
+
+## Codex independently reproduced checkpoint (24 October 2026 IST)
+
+| Check | Result | Limits |
+|---|---|---|
+| Domain | 65/65 pass | English supported grammar/fixtures only |
+| API | 40/40 pass | local D1; OpenAI mocked |
+| Browser | 16/16 pass | installed Chrome, desktop/Pixel 7 viewport; no physical camera/phone |
+| Receipt browser correction / total only / attach + Undo | 6/6 pass (included above) | real normalization/IndexedDB/client interactions; receipt draft APIs mocked |
+| Lint/typecheck | pass | includes typed DB test helper |
+| Frozen dependency install | pass | local release-age policy preserved; pinned older development types/ignore |
+| Web/native web bundle | pass | build and cap sync only; updated APK not yet verified |
+| New Android JVM/build | pending | original wrapper download timeout; toolchain recovery underway |
+
+Earlier rows above record Devin's historical results and gaps. The Codex rows supersede earlier pending local receipt/number-word coverage; they do not supersede any pending live/device acceptance gates.

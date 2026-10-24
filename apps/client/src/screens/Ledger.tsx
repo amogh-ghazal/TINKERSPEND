@@ -64,6 +64,12 @@ export function Ledger({ month, reviewOnly, onChanged }: { month: string; review
               <strong className={t.direction === "in" || t.kind === "refund" ? "pos" : ""}>{t.kind === "refund" ? "−" : ""}{inr(t.amount_paise)}</strong>
             </div>
             <div className="row">
+              {t.receipt_draft_id && t.source !== "receipt" && <button className="secondary" disabled={busy === t.id} onClick={async () => {
+                setBusy(t.id); setErr(null);
+                try { await api("POST", `/drafts/${t.receipt_draft_id}/detach`); changed(); }
+                catch (e) { setErr((e as Error).message); }
+                finally { setBusy(null); }
+              }}>Undo receipt attachment</button>}
               {t.review_state === "needs_review" && t.kind !== "unknown" && <button onClick={() => confirmTxn(t, "confirmed")}>Confirm</button>}
               {t.review_state === "needs_review" && t.suggestion && t.suggestion.kind !== "unknown" && <button onClick={() => accept(t)}>Accept suggestion</button>}
               {t.review_state === "needs_review" && !t.suggestion && (t.kind === "unknown" || t.kind === "expense") && t.direction !== "incoming" && (

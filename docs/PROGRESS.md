@@ -2,6 +2,25 @@
 
 _Status legend: **implemented** (code exists), **tested** (automated/manual evidence recorded), **failed**, **not tested**._
 
+## Codex continuation — 24 October 2026 (IST)
+
+The owner explicitly transferred implementation to Codex. The historical Devin-only wording in the original spec is superseded for workflow; its product/privacy/free-tier constraints remain.
+
+Independently reproduced on Windows: Node 24.22.1, pnpm 11.25.0, installed Chrome with desktop and Pixel 7 viewport:
+
+- `pnpm install --frozen-lockfile`: pass; release-age policy retained, old-enough type/ignore pins, only esbuild/workerd native build scripts allowed.
+- `pnpm test`: **65/65 pass** (including strict English monetary-word normalization, Indian scales, decimal digits, malformed phrases, quantities and identifier guards).
+- `pnpm test:api`: **40/40 pass** against local Worker/D1 with mocked OpenAI, including transcript words and rejection of balance/invented amounts, plus real notification-ingest-to-receipt attachment/detachment with one ledger record and unchanged totals.
+- `pnpm lint`, `pnpm typecheck`: pass. Removed the untyped test DB handle that hid invalid generic calls/null handling in the handoff.
+- `$env:TS_BROWSER_CHANNEL='chrome'; pnpm test:e2e`: **16/16 pass**. Includes real client photo selection/JPEG normalization/IndexedDB and mocked receipt draft APIs for correction, total-only save, attach and Undo on desktop/mobile. No live OCR is claimed.
+- `pnpm android:sync`: pass; updated native web bundle generated. An updated Android APK/JVM run is not yet verified: original Gradle wrapper download timed out, SDK 36 was installed locally and a verified Gradle distribution download is in progress.
+
+Changes: monetary words now have deterministic support with AI validation against parsed expense amounts rather than any digit substring; receipt drafts correctly say "From receipt"; ledger exposes Undo for attached receipts; cross-platform E2E server replaces the Bash-only harness. Browser screenshots are in `docs/evidence/screenshots/`, indexed by [evidence README](evidence/README.md).
+
+Organizer-template records (`AGENTS.md`, `CHANGELOG.md`, `AI_USAGE.md`, `SUBMISSION.md`) were adapted into the existing repository. See `docs/TEMPLATE_PROVENANCE.md`: no template ancestry, event-date eligibility, final submission or deployment is claimed.
+
+Still blocked/unverified: private signing key backup, live credentials/OAuth, Cloudflare Free deployment/CPU limits, real transcription and receipt evaluation, Oppo model/version/payment apps and real physical capture/public install. A laptop Android VM is available for synthetic checks; it is not physical UPI evidence.
+
 ## Current milestone: M0 — Foundation and feasibility
 
 | Item | State | Evidence |
@@ -31,10 +50,10 @@ _Status legend: **implemented** (code exists), **tested** (automated/manual evid
 
 Totals at this commit: domain 45/45, API 38/38, browser E2E 10/10; lint/typecheck clean; source + web bundle secret scan clean.
 
-## Review findings (open, 2026-10-24)
-- Spoken-number amounts may be rejected by `amountInSource` (voice UX; no wrong amounts) — investigate.
-- Receipt UI click-through has no verified browser test.
-- Notification-origin receipt matching has no verified test (only manual-origin).
+## Review findings (updated by Codex, 2026-10-24)
+- Spoken-number handling: fixed for the supported strict English monetary grammar; domain/API checks pass. Real voice accuracy remains unverified.
+- Receipt UI click-through: six desktop/mobile cases pass with mocked receipt draft APIs; real camera/OCR still pending.
+- Notification-origin receipt matching: local D1 integration now passes, including attach/undo and unchanged totals. Physical payment notifications still pending.
 - Debug APK built without `TS_DEBUG_KEYSTORE` is signed by the VM default key, not the shared debug key registered for OAuth.
 See docs/CODEX_HANDOFF.md.
 

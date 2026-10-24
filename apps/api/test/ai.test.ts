@@ -108,7 +108,7 @@ describe("AI classification (OpenAI mocked at fetch)", () => {
     expect(again.json.error.code).toBe("outcome_unknown");
     expect(m.calls.length).toBe(1);
     const used = await E.DB.prepare("SELECT count FROM usage_counters WHERE user_id = ? AND day = ? AND metric = 'classify'").bind(a.userId, day()).first();
-    expect(used.count).toBe(1); // uncertain outcome counted conservatively
+    expect(used?.count).toBe(1); // uncertain outcome counted conservatively
   });
 
   it("exhausted provider credits → 503 retryable; captured record stays in review", async () => {
@@ -141,7 +141,7 @@ describe("AI classification (OpenAI mocked at fetch)", () => {
     expect(g.status).toBe(429);
     expect(m.calls.length).toBe(0);
     const u = await E.DB.prepare("SELECT count FROM usage_counters WHERE user_id = ? AND day = ? AND metric = 'classify'").bind(a.userId, day()).first();
-    expect(u.count).toBe(10);
+    expect(u?.count).toBe(10);
     await E.DB.prepare("UPDATE global_counters SET count = ? WHERE day = ? AND metric = 'ai_calls'").bind(before?.count ?? 0, day()).run();
     const ok = await classify(a.token, t.id, op); // quota freed → same operation proceeds once
     expect(ok.json.status).toBe("succeeded");
@@ -159,7 +159,7 @@ describe("AI classification (OpenAI mocked at fetch)", () => {
     expect(rs.filter((r) => r.status === 429).length).toBe(5);
     expect(m.calls.length).toBe(3);
     const u = await E.DB.prepare("SELECT count FROM usage_counters WHERE user_id = ? AND day = ? AND metric = 'classify'").bind(a.userId, day()).first();
-    expect(u.count).toBe(50);
+    expect(u?.count).toBe(50);
   });
 
   it("cannot classify another user's transaction; AI-disabled users are skipped", async () => {

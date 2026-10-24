@@ -1,6 +1,7 @@
 import { deterministicCategory, type CategoryId } from "./categories";
 import { resolveRelativeDate, localDateOf, DEFAULT_TIMEZONE } from "./dates";
 import { parseRupeesToPaise } from "./money";
+import { normalizeSpokenMoney } from "./spoken-money";
 
 /**
  * Deterministic parser for short typed/spoken expense statements
@@ -82,7 +83,7 @@ export function parseExpenseStatement(text: string, referenceUtcMs: number, time
   const refDate = localDateOf(referenceUtcMs, timeZone);
   let s = ` ${text.replace(/\s+/g, " ")} `;
   const foreign = /\$|\b(usd|dollars?|euros?|eur|gbp|pounds?)\b/i.test(s) ? (/\b(eur|euros?)\b/i.test(s) ? "EUR" : /\b(gbp|pounds?)\b/i.test(s) ? "GBP" : "USD") : null;
-  s = applyCorrections(stripSensitiveNumbers(s.replace(/₹\s*/g, "rs ")));
+  s = applyCorrections(stripSensitiveNumbers(normalizeSpokenMoney(s.replace(/₹\s*/g, "rs "))));
   const segs = s.split(/\s*(?:;|(?<!\d),|,(?!\d)|\band\b|\bplus\b|\balso\b|\bthen\b|\.\s)\s*/i).map((x) => x.trim()).filter(Boolean);
 
   const drafts: StatementDraft[] = [];

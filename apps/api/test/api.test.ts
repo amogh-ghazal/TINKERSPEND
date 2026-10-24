@@ -42,7 +42,8 @@ describe("auth", () => {
     expect(devs.json.items.length).toBeGreaterThanOrEqual(2);
     // revoke the device behind session b
     const bMe = await E.DB.prepare("SELECT device_id FROM sessions WHERE user_id = ? AND revoked_at IS NULL ORDER BY created_at LIMIT 1").bind(b.userId).first();
-    expect((await call("DELETE", `/api/v1/devices/${bMe.device_id}`, { token: c.token })).status).toBe(200);
+    expect(bMe).not.toBeNull();
+    expect((await call("DELETE", `/api/v1/devices/${bMe!.device_id}`, { token: c.token })).status).toBe(200);
     expect((await call("GET", "/api/v1/me", { token: b.token })).status).toBe(401);
     void devB;
   });
