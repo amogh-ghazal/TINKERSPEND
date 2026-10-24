@@ -36,4 +36,4 @@ Totals at this commit: domain 45/45, API 38/38, browser E2E 10/10; lint/typechec
 - Capacitor 8 Android requires JDK 21 (VM had 17).
 
 ## Next action
-M7: signed release APK (needs release keystore secret), production Worker/D1 deploy (needs Cloudflare credentials), developer vs public install checks.
+M7 done locally: signed release APK verified (docs/evidence/m7-release-apk.txt), README + deploy/migrate/release-check scripts. Remaining: production deploy + subdomain (Cloudflare credentials), real Google sign-in, real-phone capture, physical developer install, public APK install, voice/receipt evaluations (OPENAI_API_KEY), full demo (spec §22).
