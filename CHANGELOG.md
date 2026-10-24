@@ -1,5 +1,11 @@
 # Change log
 
+## 2026-10-25 — Dark interface and motion polish
+
+- Changed: replaced the pale presentation palette with a layered charcoal and deep-green theme, added a clearer branded header and section navigation, improved table/form contrast, and added short screen/card transitions with hover feedback.
+- Accessibility: transitions respect `prefers-reduced-motion`; controls retain visible keyboard focus and touch-friendly sizing. No remote assets, dependencies, tracking or transaction behavior were added.
+- Validation: lint, full typecheck, production web build and 68 domain tests pass. Playwright could not launch its bundled Chromium (`spawn UNKNOWN`); a retry using system Chrome stalled before reporting test results, so browser behavior remains unverified in this session.
+
 ## 2026-10-25 — Demo presentation surface
 
 - Changed: refreshed the web interface with a local design system for a clearer demo narrative: branded shell, refined navigation, prominent spending cards, calmer review states and responsive mobile spacing. No tracking, remote font, account, API or accounting behavior was added.

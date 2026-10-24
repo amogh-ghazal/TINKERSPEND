@@ -2,9 +2,11 @@
 
 _Status legend: **implemented** (code exists), **tested** (automated/manual evidence recorded), **failed**, **not tested**._
 
-## Latest — 25 October 2026, demo interface refresh
+## Latest — 25 October 2026, dark interface refresh
 
-The web client has a presentation-ready local visual refresh: typography, navigation, card hierarchy, spending summary, review states and mobile layout are improved without remote assets, analytics, changed accounting behavior or new API calls. Lint and full typecheck passed. The existing browser suite was started after the CSS-only change; it is not recorded as passing in this checkpoint.
+The client now uses a charcoal and deep-green visual theme with a branded app header, clearer section navigation, stronger spending-card hierarchy, dark table/form states and short screen/card transitions. Layout remains responsive, keyboard focus stays visible, and motion is disabled for users who request reduced motion. No remote assets, dependencies, tracking or transaction/API behavior were added. Lint, full typecheck, web build and 68 domain tests pass. Playwright could not launch bundled Chromium (`spawn UNKNOWN`); the system Chrome retry stalled before returning results, so browser behavior is not verified in this checkpoint.
+
+The earlier light-theme presentation refresh below is retained as historical work; this update supersedes its visual palette.
 
 ## Latest — 25 October 2026, production deployment
 

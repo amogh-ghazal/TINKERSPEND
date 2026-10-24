@@ -31,9 +31,9 @@ export function Overview({ month, setMonth, onOpenReview }: { month: string; set
           )}
           <h3>By category</h3>
           {s.byCategory.length === 0 ? <p>No confirmed spending this month.</p> : (
-            <table className="table"><thead><tr><th>Category</th><th>Spent</th><th>Refunded</th><th>Net</th></tr></thead>
+            <div className="table-wrap"><table className="table"><thead><tr><th>Category</th><th>Spent</th><th>Refunded</th><th>Net</th></tr></thead>
               <tbody>{s.byCategory.map((c) => <tr key={c.categoryId}><td>{categoryName(c.categoryId)}</td><td>{inr(c.spentPaise)}</td><td>{c.refundedPaise ? inr(c.refundedPaise) : "—"}</td><td>{inr(c.netPaise)}</td></tr>)}</tbody>
-            </table>
+            </table></div>
           )}
         </>
       )}

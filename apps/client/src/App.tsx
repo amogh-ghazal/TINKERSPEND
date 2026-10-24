@@ -51,15 +51,24 @@ function Home({ me, onSignedOut }: { me: Me; onSignedOut: () => void }) {
   }, [tab, bump]);
   const tabs: [Tab, string][] = [["overview", "Overview"], ["ledger", "Transactions"], ["review", "Review"], ["add", "Add"], ...(isNative ? [["capture", "Capture"] as [Tab, string]] : []), ["account", "Account"]];
   return (
-    <main className="container">
-      <header className="row between"><h1>TinkerSpend</h1></header>
-      <nav className="tabs" aria-label="Sections">{tabs.map(([t, l]) => <button key={t} className={tab === t ? "" : "secondary"} aria-current={tab === t ? "page" : undefined} onClick={() => setTab(t)}>{l}</button>)}</nav>
-      {tab === "overview" && <Overview key={rev} month={month} setMonth={setMonth} onOpenReview={() => setTab("review")} />}
-      {(tab === "ledger" || tab === "review") && <Ledger key={`${tab}-${rev}`} month={month} reviewOnly={tab === "review"} onChanged={bump} timezone={me.timezone} />}
-      {tab === "add" && <QuickAdd onSaved={(t) => { setMonth(t.effective_local_date.slice(0, 7)); bump(); }} />}
-      {tab === "add" && <section className="card"><h2>Add expense</h2><TxnForm key={rev} onDone={(t) => { setMonth(t.effective_local_date.slice(0, 7)); bump(); setTab("ledger"); }} /></section>}
-      {tab === "capture" && <CaptureStatusPanel />}
-      {tab === "account" && <Settings me={me} onSignedOut={onSignedOut} />}
+    <main className="container app-shell">
+      <header className="app-header">
+        <div className="brand-lockup">
+          <span className="brand-mark" aria-hidden="true">T</span>
+          <div><p className="eyebrow">PERSONAL FINANCE · INDIA</p><h1>TinkerSpend</h1></div>
+        </div>
+        <div className="privacy-pill"><span className="privacy-dot" />Private workspace</div>
+        <p className="header-copy">A clearer picture of where your money goes.</p>
+      </header>
+      <nav className="tabs" aria-label="Sections">{tabs.map(([t, l], i) => <button key={t} className={`tab${tab === t ? " active" : ""}`} aria-current={tab === t ? "page" : undefined} onClick={() => setTab(t)}><span>{l}</span><small>{String(i + 1).padStart(2, "0")}</small></button>)}</nav>
+      <div className="screen-content" key={tab}>
+        {tab === "overview" && <Overview key={rev} month={month} setMonth={setMonth} onOpenReview={() => setTab("review")} />}
+        {(tab === "ledger" || tab === "review") && <Ledger key={`${tab}-${rev}`} month={month} reviewOnly={tab === "review"} onChanged={bump} timezone={me.timezone} />}
+        {tab === "add" && <QuickAdd onSaved={(t) => { setMonth(t.effective_local_date.slice(0, 7)); bump(); }} />}
+        {tab === "add" && <section className="card"><h2>Add expense</h2><TxnForm key={rev} onDone={(t) => { setMonth(t.effective_local_date.slice(0, 7)); bump(); setTab("ledger"); }} /></section>}
+        {tab === "capture" && <CaptureStatusPanel />}
+        {tab === "account" && <Settings me={me} onSignedOut={onSignedOut} />}
+      </div>
     </main>
   );
 }
