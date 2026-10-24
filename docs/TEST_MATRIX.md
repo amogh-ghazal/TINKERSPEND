@@ -2,7 +2,7 @@
 
 ## Latest 0.2.0 results — 25 October 2026
 
-68 domain / 48 local API / 20 browser / 8 native instrumentation / 12 deployment guard cases passed; lint/typecheck and APK builds passed. Synthetic global/current/new collection with no selected sources, automatic-mode lifecycle, local native sync and bank/time/purpose display verified. Forced concurrent reads reproduce the former edit/allocation race; guarded writes now pass. Browser purpose/duplicate confirmation and CSP enforcement pass on desktop/mobile. See `evidence/codex-020-automatic-capture.md` for raw logs, limits and transient test recovery. Live/physical/deployment gates remain pending; earlier rows are historical.
+68 domain / 48 local API / 20 browser / 8 native instrumentation / 12 deployment guard cases passed; lint/typecheck and APK builds passed. Production was deployed on 25 October 2026: HTTPS homepage returned 200 with the expected CSP and `/api/v1/health` returned `ok` with production D1. Synthetic global/current/new collection with no selected sources, automatic-mode lifecycle, local native sync and bank/time/purpose display verified. Forced concurrent reads reproduce the former edit/allocation race; guarded writes now pass. Browser purpose/duplicate confirmation and CSP enforcement pass on desktop/mobile. See `evidence/codex-020-automatic-capture.md` for raw logs, limits and transient test recovery. Live Google/OpenAI and physical-device gates remain pending; earlier rows are historical.
 
 | Area | Case | Expected | Actual | Env | Date |
 |---|---|---|---|---|---|
@@ -61,7 +61,7 @@
 | Release APK — developer install (emulator) | adb install, launch, listener connects after access grant, fixture source hidden | — | pass (emulator only, not real capture) | ts36 emulator | 2026-10-24 |
 | Release APK — developer install (physical phone) | — | — | **pending owner phone / USB debugging** | — | — |
 | Release APK — public install | download link → install → Play Protect outcome recorded separately | — | **pending owner phone**; Play Protect block would be a distribution limitation, not a launch | — | — |
-| Production deploy | Worker + D1 Free at expenses.tinkercraft.in (only if hostname free), migrations, smoke | — | **pending CLOUDFLARE_API_TOKEN / ACCOUNT_ID** | — | — |
+| Production deploy | Worker + D1 Free at expenses.tinkercraft.in, migrations, HTTPS/API smoke | homepage 200, CSP present, `/api/v1/health` → `ok` with production D1 | pass | Cloudflare Workers Free + D1 Free | 2026-10-25 |
 | Voice — spoken-number amounts | "two hundred fifty" transcript + model 250 | should keep 250 or ask user | pass: strict deterministic words parser supports tested grammar; balance/invented outputs dropped; transcription mocked | Codex Windows, domain/API | 2026-10-24 |
 | Receipt — notification-origin match | receipt vs txn created by `notifications/batch` | one ledger expense after attach | pass: local D1, one transaction, unchanged totals after attach and detach | Codex Windows; synthetic notification, mocked vision | 2026-10-24 |
 | Debug APK signer | debug build signed by shared debug key 43:31:…:9A:22 | — | **fail on VM build**: signed by VM default key 90:27:…:CD:5B (TS_DEBUG_KEYSTORE unset) | build VM | 2026-10-24 |

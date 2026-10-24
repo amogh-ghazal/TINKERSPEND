@@ -3,6 +3,7 @@
 Human review remains pending unless explicitly recorded. No credentials or private conversations are included.
 
 | Date/time | Tool | Contribution | Human review | Validation |
+| 2026-10-25T02:02:02.1655509+05:30 | Codex | Configured the owner-provided public Web OAuth client, deployed the production Worker/static site to the existing Cloudflare Free account and recorded the live configuration | Pending owner review | Deployment guard 12/12; production migration check current; HTTPS homepage/API-health smoke passed; live sign-in/OpenAI/physical-device checks remain pending |
 |---|---|---|---|---|
 | 2026-10-25T00:40:10.0305433+05:30 | Codex | Implemented owner-requested global capture/current alerts, supported bank-message filters, bank/time/purpose register, duplicate protection, deployment hardening and a confirmed concurrent-edit fix; added synthetic evidence/tests | Pending owner review | 68 domain / 48 API / 20 browser / 8 native / 12 deploy guard cases pass; live/physical gates remain pending |
 | 2026-10-24T23:40:20.4780257+05:30 | Codex | Set up a separate free Android 16 AVD; added actual native capturer/encrypted-storage instrumentation and guarded Windows capture/lifecycle/local-sync runners; recorded synthetic evidence and native UI screenshot | Pending owner review | 6/6 native tests, listener filtering/dedupe, process/access/reboot and native WorkManager → local Worker/D1 passed; all live/physical gates pending |

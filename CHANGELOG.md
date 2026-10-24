@@ -1,5 +1,11 @@
 # Change log
 
+## 2026-10-25T02:02:02.1655509+05:30 — Production deployment
+
+- Changed: configured the production Web OAuth client and deployed the Worker plus static site to `https://expenses.tinkercraft.in` on Cloudflare Workers Free + D1 Free.
+- Validation: deploy guard 12/12, production D1 migrations current, HTTPS homepage returned 200 with the expected CSP and `/api/v1/health` returned `ok` with production D1.
+- Limits: live Google sign-in, the private OpenAI Worker secret, Android OAuth configuration, release signing and physical-device testing remain pending. No paid Cloudflare service was enabled.
+
 ## 2026-10-25T00:40:10.0305433+05:30 — Automatic capture and register reliability
 
 - Changed: replaced per-source onboarding with disclosed account-bound automatic capture; current-visible import on connect/resume; supported bank message notification filtering including grouped sender/owner-reply boundaries. No SMS inbox permission. Android version 0.2.0 / code 3.

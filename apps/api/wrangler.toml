@@ -30,11 +30,11 @@ AUTH_CHALLENGE_DAILY_LIMIT = "1000"
 [env.production]
 name = "tinkerspend"
 workers_dev = false
-routes = []
+routes = [{ pattern = "expenses.tinkercraft.in", custom_domain = true }]
 [env.production.vars]
 APP_ENV = "production"
 ALLOWED_ORIGINS = "https://expenses.tinkercraft.in"
-GOOGLE_WEB_CLIENT_ID = ""
+GOOGLE_WEB_CLIENT_ID = "639238474808-b8ga9g3avnlts7npqds3ns8fkkaq02u5.apps.googleusercontent.com"
 OPENAI_TRANSCRIBE_MODEL = "gpt-4o-mini-transcribe"
 OPENAI_EXTRACT_MODEL = "gpt-4.1-mini"
 AI_DAILY_GLOBAL_LIMIT = "100"

@@ -2,7 +2,13 @@
 
 _Status legend: **implemented** (code exists), **tested** (automated/manual evidence recorded), **failed**, **not tested**._
 
-## Latest — 25 October 2026, automatic capture 0.2.0 / code 3
+## Latest — 25 October 2026, production deployment
+
+Production is live at `https://expenses.tinkercraft.in` on Cloudflare Workers Free + D1 Free. The dedicated custom domain is active, static assets return HTTPS 200 with the configured CSP, and `/api/v1/health` returned `{ "ok": true, "env": "production" }` with a production D1 response. The production Web OAuth client is configured in the Worker and deployed bundle. `pnpm test:deploy-safety` passed 12/12 and the production D1 migration check reported no pending migrations.
+
+Live Google sign-in has not yet been performed, and OpenAI-backed voice, receipt and AI categorization remain disabled until an `OPENAI_API_KEY` is added as a Worker secret. The public signed APK remains pending the original release key and a real Android device.
+
+## Previous — 25 October 2026, automatic capture 0.2.0 / code 3
 
 Implemented the owner's amended flow: one account-bound automatic opt-in + Android app-wide notification access, no per-source selection prompts; current visible/new notification collection; supported bank messaging alerts with personal/OTP/owner-reply filtering; explicit alert-time/reported-bank metadata; purpose/category clarification without blocking capture; safer duplicate and opposite-direction handling. The existing visual style is preserved for the owner's later redesign.
 
@@ -59,9 +65,9 @@ Reproducible guarded PowerShell runners and limits: [virtual testing](VIRTUAL_TE
 | M1 dashboard UI (overview, ledger, review, add/edit/delete, refund, export, devices, sign-out, delete data) | implemented; local browser E2E 8/8 | `pnpm test:e2e` |
 | Emulator lifecycle (kill, revoke, re-grant, reboot) | tested on emulator only (synthetic) | docs/evidence/m0-emulator-lifecycle.txt |
 | Real-device capture on owner's payment app | **pending owner device** | — |
-| Cloudflare Worker + D1 Free deploy & CPU measurement | **pending CLOUDFLARE_API_TOKEN / ACCOUNT_ID** | — |
+| Cloudflare Worker + D1 Free deploy | **deployed** at `https://expenses.tinkercraft.in`; HTTPS homepage/API-health smoke passed | 25 October 2026 |
 | OpenAI model verification | **pending OPENAI_API_KEY** | — |
-| Google sign-in | **pending GOOGLE_WEB_CLIENT_ID + OAuth clients** | — |
+| Google sign-in | production Web OAuth client configured for `https://expenses.tinkercraft.in`; Android clients and live validation remain pending | — |
 
 ## M1–M6 status (2026-10-24)
 
@@ -88,4 +94,4 @@ See docs/CODEX_HANDOFF.md.
 - Capacitor 8 Android requires JDK 21 (VM had 17).
 
 ## Next action
-M7 done locally: signed release APK verified (docs/evidence/m7-release-apk.txt), README + deploy/migrate/release-check scripts. Remaining: production deploy + subdomain (Cloudflare credentials), real Google sign-in, real-phone capture, physical developer install, public APK install, voice/receipt evaluations (OPENAI_API_KEY), full demo (spec §22).
+Production is deployed. Remaining acceptance work: real Google sign-in, add the private OpenAI Worker secret and evaluate voice/receipt behavior, real-phone capture, physical developer install, public APK install, and the full demo (spec §22).

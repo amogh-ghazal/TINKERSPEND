@@ -1,6 +1,6 @@
 # Security and Cloudflare Free deployment readiness
 
-This is an implementation/readiness review, not a claim of perfect security or a deployed audit. No Cloudflare account, billing plan, domain route, live Google/OpenAI configuration or public APK installation has been verified in this checkpoint.
+This is an implementation/readiness review, not a claim of perfect security or a deployed audit. The production Worker is deployed at `https://expenses.tinkercraft.in` on the Cloudflare Free plan and its HTTPS homepage/API-health checks passed on 25 October 2026. Live Google sign-in, OpenAI use and public APK installation have not been verified.
 
 ## Controls verified locally
 
@@ -22,9 +22,9 @@ Use **Workers Free + static assets + D1 Free**, with the existing domain or a wo
 
 Primary references checked 25 October 2026: [Workers limits](https://developers.cloudflare.com/workers/platform/limits/), [D1 pricing](https://developers.cloudflare.com/d1/platform/pricing/), [D1 limits](https://developers.cloudflare.com/d1/platform/limits/), [static headers](https://developers.cloudflare.com/workers/static-assets/headers/), [Google GIS CSP](https://developers.google.com/identity/gsi/web/guides/get-google-api-clientid).
 
-## Before a public deployment
+## Production deployment
 
-Cloudflare login is connected and separate APAC staging/production D1 databases are provisioned and migrated. Their IDs are set in `apps/api/wrangler.toml`. The account billing plan and `tinkercraft.in` zone access are still unverified. Complete the remaining private inputs in `OWNER_ACTIONS.md`: confirm Free billing; set the public Google client ID and exact HTTPS origins; keep OpenAI as a Worker secret; register actual APK signing fingerprints and invited accounts. `deploy.sh` derives the website's public client ID from the selected backend config. Keep existing domain/DNS records intact. No secret values belong in chat, Git, APKs or form submissions.
+Cloudflare login is connected and separate APAC staging/production D1 databases are provisioned and migrated. The `tinkercraft.in` zone is active on the Free Website plan. The production Worker uses the custom domain `expenses.tinkercraft.in`; DNS was provisioned by Cloudflare and the HTTPS homepage plus `/api/v1/health` were checked after deployment. The production Web OAuth client is configured for that exact HTTPS origin. Keep OpenAI as a Worker secret and register actual APK signing fingerprints and invited accounts before claiming native sign-in support. `deploy.sh` derives the website's public client ID from the selected backend config. No secret values belong in chat, Git, APKs or form submissions.
 
 After the original release keystore is available, build and verify the signed APK, then run `pnpm package:android-download <signed-apk>`. This stages versioned and `latest` APK URLs plus SHA256 sums into the static website build. The script enforces the existing release signer check and Cloudflare's static asset size cap. Do not stage debug, local-test or unsigned APKs.
 
