@@ -2,6 +2,10 @@
 
 _Status legend: **implemented** (code exists), **tested** (automated/manual evidence recorded), **failed**, **not tested**._
 
+## Latest — 25 October 2026, demo interface refresh
+
+The web client has a presentation-ready local visual refresh: typography, navigation, card hierarchy, spending summary, review states and mobile layout are improved without remote assets, analytics, changed accounting behavior or new API calls. Lint and full typecheck passed. The existing browser suite was started after the CSS-only change; it is not recorded as passing in this checkpoint.
+
 ## Latest — 25 October 2026, production deployment
 
 Production is live at `https://expenses.tinkercraft.in` on Cloudflare Workers Free + D1 Free. The dedicated custom domain is active, static assets return HTTPS 200 with the configured CSP, and `/api/v1/health` returned `{ "ok": true, "env": "production" }` with a production D1 response. The production Web OAuth client is configured in the Worker and deployed bundle. `pnpm test:deploy-safety` passed 12/12 and the production D1 migration check reported no pending migrations.

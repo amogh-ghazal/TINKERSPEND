@@ -1,5 +1,10 @@
 # Change log
 
+## 2026-10-25 — Demo presentation surface
+
+- Changed: refreshed the web interface with a local design system for a clearer demo narrative: branded shell, refined navigation, prominent spending cards, calmer review states and responsive mobile spacing. No tracking, remote font, account, API or accounting behavior was added.
+- Validation: lint and full typecheck pass. Worker version `38d6df44-abd9-4850-9763-143c9be6b6a2` is live and production health returned `ok`. Browser-test execution was started after the CSS-only change; no behavioral result is claimed here.
+
 ## 2026-10-25 — Personal WhatsApp draft intake
 
 - Changed: added signed Meta webhook verification, replay protection, one-time account linking and Settings controls for a personal WhatsApp intake. Linked text, JPEG/PNG receipt images and supported voice notes use the existing draft/review and AI quota paths; no message content or media is persisted.
