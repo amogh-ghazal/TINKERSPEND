@@ -1,5 +1,13 @@
 # Change log
 
+## 2026-10-24T23:40:20.4780257+05:30 — Virtual Android continuation
+
+- Changed: added six native instrumentation cases in total (three new capture/encrypted-storage tests alongside existing isolation/migration/package tests), guarded Windows emulator/capture/lifecycle/local-sync runners and virtual test instructions/evidence.
+- Why: the owner's available phone does not start; the owner authorized virtual development while finding another Android device. The existing BlueStacks connection could not install reliably, so created a separate AOSP API 36 test AVD using official checksum-verified downloads and existing WHPX acceleration.
+- Validation: all three test APKs installed; **6/6 instrumentation passed**; synthetic capture/duplicate/OTP/promotion checks passed without opening MainActivity; native process restart, access revoke/regrant and reboot checks passed. Native WorkManager delivered notifications to local Worker/D1: observed pending ₹700, then the same ID became successful, exactly one transaction and zero pending/failed for the current owner. Native dashboard screenshot visually inspected.
+- Runner fix during validation: adb `-w` initially collided with PowerShell common-parameter parsing; changed the wrapper to a plain function and completed the suite. No app/domain/API production behavior was changed in this checkpoint.
+- Limits: synthetic/local-only, no live Google/OpenAI/deployment or physical UPI/public installation. Recorded a nonfatal Capacitor startup safe-area CSS warning; device cutout/keyboard behavior remains pending. Original signing-key backup remains an owner action.
+
 ## 2026-10-24T21:59:59+05:30 — Native diagnostics privacy
 
 - Changed: account-scoped recent-event/pending/failed diagnostics; removed plaintext preview writes from capture and decrypt previews only on demand for the bound owner. Room v1→v2 migration clears legacy preview strings without deleting encrypted payloads. Added Android instrumentation coverage for isolation and migration, and corrected the scaffold's stale package assertion.

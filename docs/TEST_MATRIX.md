@@ -74,8 +74,21 @@
 | Frozen dependency install | pass | local release-age policy preserved; pinned older development types/ignore |
 | Web/native web bundle | pass | build and cap sync only; updated APK not yet verified |
 | Android JVM/build | pass: debug 0.1.1/code 2 + fixture + Android test APK; JVM scaffold 1/1 | JDK 21 / SDK 36 / verified Gradle 8.14.3; no real capture |
-| Native isolation/preview migration instrumentation | compiled; **not run** | VM ADB install/shell closes connection; physical phone unavailable |
+| Native isolation/preview migration instrumentation | **6/6 instrumentation tests passed** on later separate SDK emulator, including encrypted capture/Keystore/Room cases | Android 16 / API 36 AOSP, synthetic only; physical phone unavailable |
 | Codex debug signer | v2 signature verifies; SHA-1 `1e7dc1be847ef47c49503ce1360bbe241e5bcaee` | local development key; differs from original Devin debug/release keys; OAuth must use actual signer |
 | APK packaged web/config scan | zero OpenAI-key-pattern matches | bounded static scan, not a complete security audit |
 
 Earlier rows above record Devin's historical results and gaps. The Codex rows supersede earlier pending local receipt/number-word coverage; they do not supersede any pending live/device acceptance gates.
+
+## Codex virtual continuation (24 October 2026, 23:37 IST)
+
+| Check | Result | Limits |
+|---|---|---|
+| Official SDK emulator/image + acceleration | checksum verified; AOSP API 36 boots; WHPX usable | separate dedicated AVD, existing BlueStacks unchanged |
+| Native instrumentation | 6/6 pass | emulated Keystore; no hardware-backed-key claim |
+| Listener capture with MainActivity unopened | payment captured, repeat callback collapsed, OTP/promotion filtered | synthetic fixture only |
+| Process death; access revoke/regrant; reboot | pass; outbox survives and capture resumes | no OEM/physical UPI guarantee; force-stop not promised |
+| Native WorkManager → local Worker/D1 | pending ₹700 observed, same ID successful, one row; current-owner pending=0/failed=0 | fresh fake local identity; no Google/OpenAI/deployment |
+| Native UI launch | dashboard rendered; one ₹700 review item excluded from spending | nonfatal Capacitor startup safe-area CSS warning; cutout/keyboard/physical UI still pending |
+
+Evidence and scripts: `docs/evidence/codex-virtual-android.md`, `docs/VIRTUAL_TESTING.md`.

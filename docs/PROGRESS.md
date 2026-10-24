@@ -23,7 +23,19 @@ Still blocked/unverified: private signing key backup, live credentials/OAuth, Cl
 
 ### Native privacy follow-up
 
-Source review found persisted plaintext previews and a global recent-events diagnostics query. These are now changed to owner-scoped queries, blank stored previews, on-demand decryption for the bound owner, and a Room v1→v2 cleanup migration that retains encrypted payloads. Android isolation/migration instrumentation tests compile into the test APK but **have not run**. Both debug and test APKs build at version 0.1.1 / code 2. ADB installation on the listed laptop VM failed with `connect error for write: closed`; a targeted reconnect and non-streaming attempt did not restore usable access. No installation, migration execution or capture is claimed on this VM. Evidence: `docs/evidence/codex-android-0.1.1.md`. Original release signing key still unavailable.
+Source review found persisted plaintext previews and a global recent-events diagnostics query. These are now changed to owner-scoped queries, blank stored previews, on-demand decryption for the bound owner, and a Room v1→v2 cleanup migration that retains encrypted payloads. Both debug and test APKs build at version 0.1.1 / code 2. Initial BlueStacks ADB installation failed with `connect error for write: closed` ([earlier build evidence](evidence/codex-android-0.1.1.md)). A later separate SDK emulator now runs all six instrumentation tests successfully, including isolation/preview cleanup and the actual encrypted capture path; see below. Original release signing key still unavailable.
+
+### Virtual continuation — 24 October 2026, 23:37 IST
+
+The owner's Oppo does not turn on. The owner explicitly authorized continuing virtually while looking for another phone. Set up a separate free AOSP Android 16 / API 36 AVD with verified official runtime/image checksums and existing WHPX hardware acceleration. No existing BlueStacks settings or Windows features were changed.
+
+- **6/6 Android instrumentation tests passed**: package, owner isolation/preview cleanup, fresh-IV authenticated Keystore encryption/tamper rejection, encrypted Room close/reopen and actual capture gates/filter/deduplication/persistence.
+- **Synthetic native capture passed with MainActivity unopened**: payment captured, duplicate callback collapsed, OTP/promotion excluded.
+- **Lifecycle passed**: process death, listener-access revoke/regrant, queued data surviving reboot and new capture without opening the app.
+- **Native WorkManager → local Worker/D1 passed**: pending ₹700 observed, same transaction ID upgraded to successful, one ledger item, current-owner pending=0/failed=0. Local test identities only; no live Google/OpenAI.
+- **Native dashboard rendered** after those checks; actual screenshot shows the ₹700 item awaiting review and excluded from spending. Nonfatal Capacitor startup safe-area CSS warning recorded; physical cutout/keyboard behavior remains pending.
+
+Reproducible guarded PowerShell runners and limits: [virtual testing](VIRTUAL_TESTING.md). Raw logs/environment/actual screenshot: [virtual Android evidence](evidence/codex-virtual-android.md). This advances synthetic virtual verification; physical UPI capture, public install, original signing-key backup and all live-service/deployment checks remain pending.
 
 ## Current milestone: M0 — Foundation and feasibility
 
