@@ -5,3 +5,10 @@
   Referrer-Policy: strict-origin-when-cross-origin
   Cross-Origin-Opener-Policy: same-origin-allow-popups
   Permissions-Policy: camera=(self), microphone=(self), geolocation=(), payment=()
+
+/downloads/*.apk
+  Content-Disposition: attachment
+  X-Content-Type-Options: nosniff
+
+/downloads/tinkerspend-latest.apk
+  Cache-Control: no-cache
