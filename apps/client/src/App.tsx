@@ -8,6 +8,7 @@ import { Ledger } from "./screens/Ledger";
 import { Overview } from "./screens/Overview";
 import { Settings } from "./screens/Settings";
 import { TxnForm } from "./screens/TxnForm";
+import { QuickAdd } from "./screens/QuickAdd";
 
 type Tab = "overview" | "ledger" | "review" | "add" | "capture" | "account";
 
@@ -46,6 +47,7 @@ function Home({ me, onSignedOut }: { me: Me; onSignedOut: () => void }) {
       <nav className="tabs" aria-label="Sections">{tabs.map(([t, l]) => <button key={t} className={tab === t ? "" : "secondary"} aria-current={tab === t ? "page" : undefined} onClick={() => setTab(t)}>{l}</button>)}</nav>
       {tab === "overview" && <Overview key={rev} month={month} setMonth={setMonth} onOpenReview={() => setTab("review")} />}
       {(tab === "ledger" || tab === "review") && <Ledger key={`${tab}-${rev}`} month={month} reviewOnly={tab === "review"} onChanged={bump} />}
+      {tab === "add" && <QuickAdd onSaved={(t) => { setMonth(t.effective_local_date.slice(0, 7)); bump(); }} />}
       {tab === "add" && <section className="card"><h2>Add expense</h2><TxnForm key={rev} onDone={(t) => { setMonth(t.effective_local_date.slice(0, 7)); bump(); setTab("ledger"); }} /></section>}
       {tab === "capture" && <CaptureStatusPanel />}
       {tab === "account" && <Settings me={me} onSignedOut={onSignedOut} />}

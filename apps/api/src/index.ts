@@ -6,6 +6,7 @@ import { authRoutes, logoutRoute, requireAuth } from "./auth";
 import { ledger } from "./ledger";
 import { ingest } from "./ingest";
 import { ai } from "./ai";
+import { drafts } from "./drafts";
 import { SettingsPatch } from "@tinkerspend/contracts";
 import { isValidTimeZone } from "@tinkerspend/domain";
 
@@ -72,6 +73,7 @@ api.delete("/account", async (c) => {
 api.route("/", ledger);
 api.route("/", ingest);
 api.route("/", ai);
+api.route("/", drafts);
 
 app.route("/api/v1", api);
 

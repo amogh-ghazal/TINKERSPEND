@@ -12,7 +12,7 @@ const MAX_UPSTREAM_ATTEMPTS_PER_TXN = 3;
 const RECLAIMABLE = new Set(["quota_user", "quota_global", "ai_not_configured", "provider_rate_limited"]);
 
 export const utcDay = (t = now()) => new Date(t).toISOString().slice(0, 10);
-const secondsToUtcMidnight = () => { const d = new Date(); d.setUTCHours(24, 0, 0, 0); return Math.max(60, Math.ceil((d.getTime() - Date.now()) / 1000)); };
+export const secondsToUtcMidnight = () => { const d = new Date(); d.setUTCHours(24, 0, 0, 0); return Math.max(60, Math.ceil((d.getTime() - Date.now()) / 1000)); };
 
 /** Atomically reserves one user slot and one global slot; compensates the user slot if the global one is denied. */
 export async function reserveQuota(db: D1Database, userId: string, metric: string, userLimit: number, globalLimit: number): Promise<{ ok: true } | { ok: false; scope: "user" | "global" }> {
@@ -31,13 +31,13 @@ export async function reserveQuota(db: D1Database, userId: string, metric: strin
   return { ok: true };
 }
 
-interface OpRow { status: string; input_hash: string; feature: string; result: string | null; error_code: string | null; target_id: string | null }
+export interface OpRow { status: string; input_hash: string; feature: string; result: string | null; error_code: string | null; target_id: string | null }
 
-async function claimOperation(db: D1Database, userId: string, opId: string, feature: string, targetId: string, inputHash: string): Promise<{ claimed: true } | { claimed: false; row: OpRow }> {
+export async function claimOperation(db: D1Database, userId: string, opId: string, feature: string, targetId: string | null, inputHash: string, schemaVersion = CLASSIFY_SCHEMA_VERSION): Promise<{ claimed: true } | { claimed: false; row: OpRow }> {
   const ts = now();
   const ins = await db.prepare(
     "INSERT INTO ai_operations (user_id, operation_id, feature, target_id, input_hash, schema_version, status, attempts, created_at, updated_at) VALUES (?,?,?,?,?,?,'running',1,?,?) ON CONFLICT(user_id, operation_id) DO NOTHING",
-  ).bind(userId, opId, feature, targetId, inputHash, CLASSIFY_SCHEMA_VERSION, ts, ts).run();
+  ).bind(userId, opId, feature, targetId, inputHash, schemaVersion, ts, ts).run();
   if (ins.meta.changes) return { claimed: true };
   const row = await db.prepare("SELECT status, input_hash, feature, result, error_code, target_id FROM ai_operations WHERE user_id = ? AND operation_id = ?").bind(userId, opId).first<OpRow>();
   if (!row) throw new ApiError(409, "conflict", "Operation is being created; retry", true, 5);
@@ -50,7 +50,7 @@ async function claimOperation(db: D1Database, userId: string, opId: string, feat
   return { claimed: false, row };
 }
 
-async function finishOp(db: D1Database, userId: string, opId: string, status: string, f: { error_code?: string; result?: unknown; model?: string; usage?: unknown; request_id?: string | null }) {
+export async function finishOp(db: D1Database, userId: string, opId: string, status: string, f: { error_code?: string; result?: unknown; model?: string; usage?: unknown; request_id?: string | null }) {
   await db.prepare("UPDATE ai_operations SET status = ?, error_code = ?, result = ?, model = COALESCE(?, model), usage = ?, provider_request_id = ?, updated_at = ? WHERE user_id = ? AND operation_id = ?")
     .bind(status, f.error_code ?? null, f.result === undefined ? null : JSON.stringify(f.result), f.model ?? null, f.usage === undefined ? null : JSON.stringify(f.usage), f.request_id ?? null, now(), userId, opId).run();
 }
@@ -96,7 +96,7 @@ const JSON_SCHEMA = {
   additionalProperties: false,
 };
 
-type Upstream =
+export type Upstream =
   | { type: "ok"; text: string; usage: unknown; requestId: string | null }
   | { type: "refusal" | "incomplete"; usage: unknown; requestId: string | null }
   | { type: "http_error"; status: number; code: string | null; requestId: string | null };

@@ -26,8 +26,8 @@ export async function api<T>(method: string, path: string, body?: unknown): Prom
   if (status === 0) throw new ApiFailure(0, "network", "Network unavailable. Nothing was saved.");
   const parsed = text && !path.endsWith(".csv") ? safeJson(text) : text;
   if (status >= 400) {
-    const e = (parsed as { error?: { code?: string; message?: string; details?: unknown } })?.error;
-    throw new ApiFailure(status, e?.code ?? "error", e?.message ?? `Request failed (${status})`, e?.details);
+    const e = (parsed as { error?: { code?: string; message?: string; details?: unknown; fields?: unknown } })?.error;
+    throw new ApiFailure(status, e?.code ?? "error", e?.message ?? `Request failed (${status})`, e?.fields ?? e?.details);
   }
   return parsed as T;
 }

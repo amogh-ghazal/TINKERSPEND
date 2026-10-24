@@ -37,3 +37,9 @@
 - Data sent: payee name, amount, direction, payment status, short note. No references, VPAs or history. `store: false` (controls response storage only; not a zero-retention guarantee).
 - Model: `OPENAI_CATEGORY_MODEL` falls back to `OPENAI_EXTRACT_MODEL` (`gpt-4.1-mini` placeholder). **Not verified** against the owner's account; must be confirmed when OPENAI_API_KEY is provided.
 - Native enrichment jobs: 5xx deferred (Retry-After honoured) and failed after 5 attempts, so a missing key cannot cause an unbounded loop.
+
+## M4 typed/voice drafts (2026-10-24)
+- Text: AI extraction when enabled/configured and within quota; otherwise (AI off, no key, quota, provider error, refusal, invalid output, timeout) the deterministic `parseExpenseStatement` produces drafts, so typed input is never lost. Response says which method was used.
+- The model copies amounts and date phrases verbatim; the server resolves dates from `reference_time` (typing/recording start) in the user's zone and drops any amount whose digits do not appear in the source text (`amount_not_in_source`).
+- Voice: the client keeps the recording until drafts are created. Uploads are validated (MIME allowlist, ≤3 MiB, ≤60 s) and quota-reserved before any provider call. A transcription timeout is `outcome_unknown` and is not retried under the same operation; the user can explicitly retry (new operation) or type instead. Audio is never stored server-side.
+- Drafts expire after 7 days; the original text/transcript is removed on save, discard or expiry. Saving requires amount, date, INR and an explicit "I paid this" for successful expenses; provenance is `self_reported`.
