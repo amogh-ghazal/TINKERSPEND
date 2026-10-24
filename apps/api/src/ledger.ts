@@ -37,7 +37,7 @@ export async function loadTxn(db: D1Database, userId: string, id: string): Promi
   return t;
 }
 
-async function allocationsFor(db: D1Database, userId: string, ids: string[]) {
+export async function allocationsFor(db: D1Database, userId: string, ids: string[]) {
   const map = new Map<string, Alloc[]>();
   if (ids.length === 0) return map;
   const rs = await db.prepare(`SELECT transaction_id, category, amount_paise FROM allocations WHERE user_id = ? AND transaction_id IN (${ids.map(() => "?").join(",")})`)
@@ -61,13 +61,23 @@ export async function suggestionsFor(db: D1Database, userId: string, ids: string
   return map;
 }
 
-export function present(t: TxnRow, allocs: Alloc[], suggestion?: SuggestionRow | null) {
+export async function receiptsFor(db: D1Database, userId: string, ids: string[]) {
+  const map = new Map<string, string>();
+  if (ids.length === 0) return map;
+  const rs = await db.prepare(`SELECT transaction_id, draft_id FROM receipt_links WHERE user_id = ? AND undone_at IS NULL AND transaction_id IN (${ids.map(() => "?").join(",")})`)
+    .bind(userId, ...ids).all<{ transaction_id: string; draft_id: string }>();
+  for (const r of rs.results) map.set(r.transaction_id, r.draft_id);
+  return map;
+}
+
+export function present(t: TxnRow, allocs: Alloc[], suggestion?: SuggestionRow | null, receiptDraftId?: string | null) {
   return {
     id: t.id, kind: t.kind, payment_status: t.payment_status, review_state: t.review_state,
     amount_paise: t.amount_paise, amount: paiseToDecimalString(t.amount_paise), effective_local_date: t.occurred_on, direction: t.direction,
     counterparty: t.counterparty, description: t.note, source: t.source, provenance: t.provenance, original_transaction_id: t.original_txn_id,
     merged_into_id: t.merged_into_id, user_edited_fields: JSON.parse(t.user_edited_fields) as string[], version: t.version,
     allocations: allocs.map((a) => ({ category_id: a.category, amount_paise: a.amountPaise })), created_at: t.created_at, updated_at: t.updated_at,
+    receipt_draft_id: receiptDraftId ?? null,
     suggestion: t.review_state === "needs_review" && suggestion ? { category_id: suggestion.category, kind: suggestion.kind, reason: suggestion.reason, model: suggestion.model } : null,
   };
 }
@@ -154,8 +164,9 @@ ledger.get("/transactions", async (c) => {
   const rows = rs.results.slice(0, q.data.limit);
   const allocs = await allocationsFor(c.env.DB, u.id, rows.map((r) => r.id));
   const sugg = await suggestionsFor(c.env.DB, u.id, rows.filter((r) => r.review_state === "needs_review").map((r) => r.id));
+  const rc = await receiptsFor(c.env.DB, u.id, rows.map((r) => r.id));
   const last = rows[rows.length - 1];
-  return c.json({ items: rows.map((r) => present(r, allocs.get(r.id) ?? [], sugg.get(r.id))), next_cursor: rs.results.length > q.data.limit && last ? `${last.occurred_on}|${last.id}` : null });
+  return c.json({ items: rows.map((r) => present(r, allocs.get(r.id) ?? [], sugg.get(r.id), rc.get(r.id))), next_cursor: rs.results.length > q.data.limit && last ? `${last.occurred_on}|${last.id}` : null });
 });
 
 ledger.get("/transactions/:id", async (c) => {
@@ -164,7 +175,7 @@ ledger.get("/transactions/:id", async (c) => {
   const refs = await c.env.DB.prepare("SELECT namespace, value FROM txn_refs WHERE user_id = ? AND transaction_id = ?").bind(u.id, t.id).all();
   const refunds = await c.env.DB.prepare("SELECT id, amount_paise, occurred_on FROM transactions WHERE user_id = ? AND original_txn_id = ? AND deleted_at IS NULL").bind(u.id, t.id).all();
   const evidence = await c.env.DB.prepare("SELECT source_package, posted_at, outcome FROM source_events WHERE user_id = ? AND transaction_id = ? ORDER BY posted_at").bind(u.id, t.id).all();
-  return c.json({ transaction: present(t, (await allocationsFor(c.env.DB, u.id, [t.id])).get(t.id) ?? [], (await suggestionsFor(c.env.DB, u.id, [t.id])).get(t.id)), references: refs.results, refunds: refunds.results, evidence: evidence.results });
+  return c.json({ transaction: present(t, (await allocationsFor(c.env.DB, u.id, [t.id])).get(t.id) ?? [], (await suggestionsFor(c.env.DB, u.id, [t.id])).get(t.id), (await receiptsFor(c.env.DB, u.id, [t.id])).get(t.id)), references: refs.results, refunds: refunds.results, evidence: evidence.results });
 });
 
 ledger.patch("/transactions/:id", async (c) => {

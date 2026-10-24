@@ -43,3 +43,9 @@
 - The model copies amounts and date phrases verbatim; the server resolves dates from `reference_time` (typing/recording start) in the user's zone and drops any amount whose digits do not appear in the source text (`amount_not_in_source`).
 - Voice: the client keeps the recording until drafts are created. Uploads are validated (MIME allowlist, ≤3 MiB, ≤60 s) and quota-reserved before any provider call. A transcription timeout is `outcome_unknown` and is not retried under the same operation; the user can explicitly retry (new operation) or type instead. Audio is never stored server-side.
 - Drafts expire after 7 days; the original text/transcript is removed on save, discard or expiry. Saving requires amount, date, INR and an explicit "I paid this" for successful expenses; provenance is `self_reported`.
+
+## M5 receipts (2026-10-24)
+- Client re-encodes every photo to JPEG (orientation applied, EXIF/location dropped, long edge ≤2000 px, ≤750 KiB). The normalized original is kept only on the capturing device (IndexedDB / app-private WebView storage); the server stores a user-scoped SHA-256 for duplicate warnings, never the image.
+- The model copies printed figures; the server parses them into paise and checks lines + taxes + fees − discounts = total exactly. Any mismatch, unreadable figure or >60 lines blocks the split save until corrected; the user may explicitly save the total only. No balancing line is ever invented.
+- Split allocations: total distributed over line-item category sums with largest-remainder rounding (ties to the earlier category), so allocations always equal the parent amount.
+- Matching: same amount, ±2 days, expense/unknown, not already linked; merchant similarity raises rank. Never auto-merged. Attach requires equal amounts, records `receipt_links(mode='attached')` and can be undone (`/drafts/:id/detach`).

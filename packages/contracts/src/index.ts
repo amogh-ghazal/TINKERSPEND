@@ -134,12 +134,22 @@ export const DraftEntry = z.object({
   category_id: CategoryIdSchema.nullable(),
   line_items: z.array(z.object({ description: z.string().max(200), amount: DecimalAmount.nullable(), category_id: CategoryIdSchema.nullable() })).max(LIMITS.receiptLineItems).default([]),
 });
-export const DraftPatch = z.object({ version: z.number().int().positive(), entry: DraftEntry.partial() }).strict();
+// No defaults in a patch: an omitted field must not overwrite stored values (e.g. receipt line items).
+export const DraftPatch = z.object({ version: z.number().int().positive(), entry: DraftEntry.extend({ line_items: DraftEntry.shape.line_items.removeDefault() }).partial() }).strict();
 export const DraftCommit = z.object({
   operation_id: Uuid,
   version: z.number().int().positive(),
   paid_confirmed: z.boolean(),
   attach_to_transaction_id: z.string().optional(),
+  ignore_line_items: z.boolean().optional(),
+}).strict();
+
+export const ReceiptDraftRequest = z.object({
+  operation_id: Uuid,
+  reference_time: z.number().int().positive(),
+  timezone: z.string().max(64).optional(),
+  mime_type: z.enum(["image/jpeg", "image/png"]),
+  data_base64: z.string().max(Math.ceil((LIMITS.imageBytes * 4) / 3) + 8),
 }).strict();
 
 export const TextDraftRequest = z.object({

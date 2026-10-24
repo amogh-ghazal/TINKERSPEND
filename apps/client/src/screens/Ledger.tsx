@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { parseRupeesToPaise } from "@tinkerspend/domain";
+import { loadReceipt } from "../lib/receipts";
 import { api, newOperationId } from "../lib/api";
 import { categoryName, inr, KIND_LABEL, STATUS_LABEL, today } from "../lib/format";
 import type { Txn } from "../lib/types";
@@ -51,6 +52,7 @@ export function Ledger({ month, reviewOnly, onChanged }: { month: string; review
               <div>
                 <strong>{t.counterparty || t.description || KIND_LABEL[t.kind]}</strong>
                 <div className="muted">{t.effective_local_date} · {KIND_LABEL[t.kind]} · {STATUS_LABEL[t.payment_status]}{t.kind === "expense" && t.allocations.length ? ` · ${t.allocations.map((a) => categoryName(a.category_id)).join(", ")}` : ""} · {t.source}</div>
+                {t.receipt_draft_id && <ReceiptBadge draftId={t.receipt_draft_id} />}
                 {t.suggestion && (
                   <p className="suggestion" data-testid="suggestion">
                     Suggested: <strong>{categoryName(t.suggestion.category_id)}</strong> ({KIND_LABEL[t.suggestion.kind]}){t.suggestion.reason ? ` — ${t.suggestion.reason}` : ""}
@@ -100,4 +102,15 @@ function RefundForm({ original, onDone }: { original: Txn; onDone: () => void })
       <button type="submit">Save refund</button>
     </form>
   );
+}
+
+function ReceiptBadge({ draftId }: { draftId: string }) {
+  const [url, setUrl] = useState<string | null | undefined>(undefined);
+  useEffect(() => {
+    let u: string | null = null;
+    loadReceipt(draftId).then((b) => { u = b ? URL.createObjectURL(b) : null; setUrl(u); }).catch(() => setUrl(null));
+    return () => { if (u) URL.revokeObjectURL(u); };
+  }, [draftId]);
+  if (url === undefined) return null;
+  return <p className="muted" data-testid="receipt-badge">{url ? <>Receipt saved on this device · <a href={url} target="_blank" rel="noreferrer">View</a></> : "Receipt attached · original photo is on another device"}</p>;
 }

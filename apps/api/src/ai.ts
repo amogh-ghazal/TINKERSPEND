@@ -102,7 +102,7 @@ export type Upstream =
   | { type: "http_error"; status: number; code: string | null; requestId: string | null };
 
 /** Responses API with strict JSON-schema output. Throws on network failure/timeout (outcome unknown). */
-export async function callResponses(env: Env, model: string, system: string, userContent: string, schemaName: string, schema: unknown, maxOutputTokens: number): Promise<Upstream> {
+export async function callResponses(env: Env, model: string, system: string, userContent: string | unknown[], schemaName: string, schema: unknown, maxOutputTokens: number): Promise<Upstream> {
   const res = await fetch("https://api.openai.com/v1/responses", {
     method: "POST",
     headers: { authorization: `Bearer ${env.OPENAI_API_KEY}`, "content-type": "application/json" },

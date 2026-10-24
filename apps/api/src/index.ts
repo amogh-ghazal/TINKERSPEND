@@ -63,7 +63,7 @@ api.delete("/devices/:id", async (c) => {
 });
 api.delete("/account", async (c) => {
   const u = c.get("user");
-  const tables = ["allocations", "txn_refs", "source_events", "drafts", "category_rules", "operations", "ai_operations", "txn_suggestions", "usage_counters", "transactions", "sessions", "devices"];
+  const tables = ["allocations", "txn_refs", "source_events", "drafts", "category_rules", "operations", "ai_operations", "txn_suggestions", "receipt_links", "usage_counters", "transactions", "sessions", "devices"];
   await c.env.DB.batch([
     ...tables.map((t) => c.env.DB.prepare(`DELETE FROM ${t} WHERE user_id = ?`).bind(u.id)),
     c.env.DB.prepare("DELETE FROM users WHERE id = ?").bind(u.id),
