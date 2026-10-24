@@ -11,6 +11,8 @@ _Status legend: **implemented** (code exists), **tested** (automated/manual evid
 | Android debug APK (listener, Room outbox, WorkManager, Capture/AuthBridge/Recorder plugins) | implemented, builds | `pnpm android:debug` |
 | Emulator listener test with synthetic fixture app (UI closed) | tested on emulator only (synthetic) | docs/evidence/m0-emulator-listener-logcat.txt |
 | Worker API + D1 schema, local integration tests | tested locally (11/11) | `pnpm test:api` |
+| M1 dashboard UI (overview, ledger, review, add/edit/delete, refund, export, devices, sign-out, delete data) | implemented; local browser E2E 8/8 | `pnpm test:e2e` |
+| Emulator lifecycle (kill, revoke, re-grant, reboot) | tested on emulator only (synthetic) | docs/evidence/m0-emulator-lifecycle.txt |
 | Real-device capture on owner's payment app | **pending owner device** | — |
 | Cloudflare Worker + D1 Free deploy & CPU measurement | **pending CLOUDFLARE_API_TOKEN / ACCOUNT_ID** | — |
 | OpenAI model verification | **pending OPENAI_API_KEY** | — |

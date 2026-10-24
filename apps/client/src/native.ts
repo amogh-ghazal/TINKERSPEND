@@ -39,8 +39,8 @@ export interface CapturePlugin {
 }
 
 export interface AuthBridgePlugin {
-  getChallengeAndSignIn(o: { webClientId: string; nonce: string }): Promise<{ idToken: string }>;
-  storeSession(o: { token: string; userId: string; expiresAt: number }): Promise<void>;
+  signIn(): Promise<{ user: { id: string; email: string; timezone: string } }>;
+  pendingForOtherAccounts(): Promise<{ count: number }>;
   clearSession(o: { purgePending: boolean }): Promise<void>;
   hasSession(): Promise<{ signedIn: boolean; userId: string | null; expiresAt: number | null }>;
   getInstallId(): Promise<{ installId: string }>;

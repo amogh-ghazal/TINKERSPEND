@@ -16,3 +16,8 @@
 | Android (emulator) | Access re-granted → notification | captured | pass (pending 4) | same | 2026-10-24 |
 | Android (emulator) | Reboot, app never opened → notification | captured | pass (pending 5) | same | 2026-10-24 |
 | Android (emulator) | Force-stop → notification | spec: unsupported, no promise | observed: listener rebound and captured on this emulator; NOT claimed as supported (OEM/real-device behaviour differs) | same | 2026-10-24 |
+| Browser E2E (Playwright, local wrangler dev + local D1, test-only token verifier APP_ENV=test) | §19 baseline entered through the UI incl. over-limit refund rejection | gross ₹560, refunds ₹50, net ₹510, review ₹250, pending ₹700 | pass (desktop Chrome + Pixel 7 viewport) | `pnpm test:e2e`; screenshot docs/evidence/m1-e2e-overview-mobile.png | 2026-10-24 |
+| Browser E2E | Second allowlisted user sees ₹0 for owner's month | isolation | pass (both viewports) | same | 2026-10-24 |
+| Browser E2E | Unknown → review queue → edit to expense/Groceries leaves queue; CSV export neutralizes `=HYPERLINK`; delete | as specified | pass (both viewports) | same | 2026-10-24 |
+| Browser E2E | Signed-out: sign-in screen only; `/api/v1/transactions` → 401 | as specified | pass | same | 2026-10-24 |
+| Real Google sign-in (web + Android) | GIS button / Credential Manager with real client IDs | — | **pending**: needs GOOGLE_WEB_CLIENT_ID + OAuth clients (owner action) | — | — |
