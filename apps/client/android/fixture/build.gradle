@@ -1,0 +1,15 @@
+// SYNTHETIC notification source for emulator tests only. Not shipped; proves nothing about real payment apps.
+apply plugin: 'com.android.application'
+apply plugin: 'org.jetbrains.kotlin.android'
+android {
+    namespace "in.tinkercraft.tinkerspend.fixture"
+    compileSdk rootProject.ext.compileSdkVersion
+    defaultConfig {
+        applicationId "in.tinkercraft.tinkerspend.fixture"
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
+        versionCode 1
+        versionName "fixture"
+    }
+    compileOptions { sourceCompatibility JavaVersion.VERSION_21; targetCompatibility JavaVersion.VERSION_21 }
+}
