@@ -73,6 +73,9 @@
 | Lint/typecheck | pass | includes typed DB test helper |
 | Frozen dependency install | pass | local release-age policy preserved; pinned older development types/ignore |
 | Web/native web bundle | pass | build and cap sync only; updated APK not yet verified |
-| New Android JVM/build | pending | original wrapper download timeout; toolchain recovery underway |
+| Android JVM/build | pass: debug 0.1.1/code 2 + fixture + Android test APK; JVM scaffold 1/1 | JDK 21 / SDK 36 / verified Gradle 8.14.3; no real capture |
+| Native isolation/preview migration instrumentation | compiled; **not run** | VM ADB install/shell closes connection; physical phone unavailable |
+| Codex debug signer | v2 signature verifies; SHA-1 `1e7dc1be847ef47c49503ce1360bbe241e5bcaee` | local development key; differs from original Devin debug/release keys; OAuth must use actual signer |
+| APK packaged web/config scan | zero OpenAI-key-pattern matches | bounded static scan, not a complete security audit |
 
 Earlier rows above record Devin's historical results and gaps. The Codex rows supersede earlier pending local receipt/number-word coverage; they do not supersede any pending live/device acceptance gates.

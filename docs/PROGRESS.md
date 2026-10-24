@@ -13,13 +13,17 @@ Independently reproduced on Windows: Node 24.22.1, pnpm 11.25.0, installed Chrom
 - `pnpm test:api`: **40/40 pass** against local Worker/D1 with mocked OpenAI, including transcript words and rejection of balance/invented amounts, plus real notification-ingest-to-receipt attachment/detachment with one ledger record and unchanged totals.
 - `pnpm lint`, `pnpm typecheck`: pass. Removed the untyped test DB handle that hid invalid generic calls/null handling in the handoff.
 - `$env:TS_BROWSER_CHANNEL='chrome'; pnpm test:e2e`: **16/16 pass**. Includes real client photo selection/JPEG normalization/IndexedDB and mocked receipt draft APIs for correction, total-only save, attach and Undo on desktop/mobile. No live OCR is claimed.
-- `pnpm android:sync`: pass; updated native web bundle generated. An updated Android APK/JVM run is not yet verified: original Gradle wrapper download timed out, SDK 36 was installed locally and a verified Gradle distribution download is in progress.
+- `pnpm android:sync`: pass. Android 0.1.1/code 2 debug APK, synthetic fixture APK and Android test APK build successfully with JDK 21 / SDK 36 / verified Gradle 8.14.3. JVM scaffold smoke test: **1/1 pass**; it is not notification-capture coverage. APK v2 signature verifies; packaged web/config scan found zero OpenAI-key-pattern matches.
 
 Changes: monetary words now have deterministic support with AI validation against parsed expense amounts rather than any digit substring; receipt drafts correctly say "From receipt"; ledger exposes Undo for attached receipts; cross-platform E2E server replaces the Bash-only harness. Browser screenshots are in `docs/evidence/screenshots/`, indexed by [evidence README](evidence/README.md).
 
 Organizer-template records (`AGENTS.md`, `CHANGELOG.md`, `AI_USAGE.md`, `SUBMISSION.md`) were adapted into the existing repository. See `docs/TEMPLATE_PROVENANCE.md`: no template ancestry, event-date eligibility, final submission or deployment is claimed.
 
 Still blocked/unverified: private signing key backup, live credentials/OAuth, Cloudflare Free deployment/CPU limits, real transcription and receipt evaluation, Oppo model/version/payment apps and real physical capture/public install. A laptop Android VM is available for synthetic checks; it is not physical UPI evidence.
+
+### Native privacy follow-up
+
+Source review found persisted plaintext previews and a global recent-events diagnostics query. These are now changed to owner-scoped queries, blank stored previews, on-demand decryption for the bound owner, and a Room v1→v2 cleanup migration that retains encrypted payloads. Android isolation/migration instrumentation tests compile into the test APK but **have not run**. Both debug and test APKs build at version 0.1.1 / code 2. ADB installation on the listed laptop VM failed with `connect error for write: closed`; a targeted reconnect and non-streaming attempt did not restore usable access. No installation, migration execution or capture is claimed on this VM. Evidence: `docs/evidence/codex-android-0.1.1.md`. Original release signing key still unavailable.
 
 ## Current milestone: M0 — Foundation and feasibility
 

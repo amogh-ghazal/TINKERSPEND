@@ -21,7 +21,7 @@ class DebugConfigReceiver : BroadcastReceiver() {
         if (intent.getBooleanExtra("sync", false)) SyncScheduler.schedule(ctx, userInitiated = true)
         val pending = Thread { 
             val dao = OutboxDb.get(ctx).dao()
-            Log.i("TSDebug", "state install=${p.installId} authPaused=${p.authPaused} lastSyncAt=${p.lastSyncAt} owner=${p.boundUserId} enabled=${p.captureEnabled} selected=${p.selectedPackages} listener=${p.listenerConnected} pending=${dao.pendingCount()} failed=${dao.failedCount()} lastEventAt=${p.lastEventAt}")
+            Log.i("TSDebug", "state install=${p.installId} authPaused=${p.authPaused} lastSyncAt=${p.lastSyncAt} owner=${p.boundUserId} enabled=${p.captureEnabled} selected=${p.selectedPackages} listener=${p.listenerConnected} pending=${dao.pendingCount(p.boundUserId)} failed=${dao.failedCount(p.boundUserId)} lastEventAt=${p.lastEventAt}")
         }
         pending.start(); pending.join()
     }

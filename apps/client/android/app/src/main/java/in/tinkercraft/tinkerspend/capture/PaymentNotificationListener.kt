@@ -91,7 +91,8 @@ object Capturer {
             parserVersion = PARSER_VERSION,
             payloadCipher = Crypto.encrypt(payload),
             payloadBytes = payload.size,
-            preview = combined.replace(Regex("\\d{6,}"), "••••").take(80),
+            // Previews are derived from the encrypted payload only when this owner's diagnostics are opened.
+            preview = "",
             timezone = prefs.timezone,
             isCurrentImport = isCurrentImport,
         )

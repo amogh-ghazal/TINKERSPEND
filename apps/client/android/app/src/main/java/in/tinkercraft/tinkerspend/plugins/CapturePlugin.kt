@@ -24,8 +24,8 @@ class CapturePlugin : Plugin() {
             put("lastListenerConnectAt", prefs.lastListenerConnectAt.takeIf { it > 0 })
             put("lastEventAt", prefs.lastEventAt.takeIf { it > 0 })
             put("lastSyncAt", prefs.lastSyncAt.takeIf { it > 0 })
-            put("pendingCount", dao.pendingCount())
-            put("failedCount", dao.failedCount())
+            put("pendingCount", dao.pendingCount(prefs.boundUserId))
+            put("failedCount", dao.failedCount(prefs.boundUserId))
             put("captureEnabled", prefs.captureEnabled)
             put("boundUser", prefs.boundUserId)
             put("selectedPackages", JSArray(prefs.selectedPackages.toList()))
@@ -71,12 +71,20 @@ class CapturePlugin : Plugin() {
 
     @PluginMethod fun recentEvents(call: PluginCall) = io.execute {
         val limit = call.getInt("limit", 10)!!.coerceIn(1, 50)
+        val owner = Prefs(context).boundUserId
         val out = JSArray()
-        for (e in OutboxDb.get(context).dao().recent(limit)) {
+        for (e in OutboxDb.get(context).dao().recent(owner, limit)) {
+            val preview = try {
+                e.payloadCipher?.let { cipher ->
+                    val payload = org.json.JSONObject(String(Crypto.decrypt(cipher), Charsets.UTF_8))
+                    listOfNotNull(payload.optString("title").takeUnless { it == "null" }, payload.optString("text").takeUnless { it == "null" })
+                        .joinToString(" ").replace(Regex("\\d{6,}"), "••••").take(80)
+                } ?: ""
+            } catch (_: Exception) { "Preview unavailable" }
             out.put(JSObject().put("eventId", e.eventId).put("sourcePackage", e.sourcePackage).put("capturedAt", e.capturedAt)
-                .put("state", e.ackStatus ?: e.state).put("preview", e.preview).put("errorCode", e.errorCode))
+                .put("state", e.ackStatus ?: e.state).put("preview", preview).put("errorCode", e.errorCode))
         }
-        call.resolve(JSObject().put("events", out))
+        call.resolve(JSObject().put("events", if (Prefs(context).boundUserId == owner) out else JSArray()))
     }
 
     @PluginMethod fun syncNow(call: PluginCall) { Prefs(context).authPaused = false; SyncScheduler.schedule(context, userInitiated = true); call.resolve() }

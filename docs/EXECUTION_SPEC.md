@@ -1,5 +1,7 @@
 # Devin execution specification — TinkerSpend
 
+> Workflow amendment, 24 October 2026: the owner explicitly authorized continuing implementation in Codex after the Devin checkpoint. Historical clauses requiring Devin-only execution are superseded by that authorization. Product, privacy, accounting, verification and free-infrastructure requirements remain in force. Current evidence and exceptions are recorded in `PROGRESS.md`, root `AGENTS.md`, `CHANGELOG.md` and `AI_USAGE.md`.
+
 Prepared 24 October 2026. Working product name: **TinkerSpend**. This is a build specification for Devin by Cognition, not a claim that the implementation or phone compatibility has already been tested.
 
 ## 1. Mission and binding constraints

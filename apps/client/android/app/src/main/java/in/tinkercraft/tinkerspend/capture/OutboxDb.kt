@@ -2,6 +2,8 @@ package `in`.tinkercraft.tinkerspend.capture
 
 import android.content.Context
 import androidx.room.*
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Entity(
     tableName = "outbox",
@@ -59,17 +61,17 @@ interface OutboxDao {
     @Query("SELECT * FROM outbox WHERE state = 'pending' AND ownerUserId = :owner AND nextAttemptAt <= :now ORDER BY capturedAt LIMIT :limit")
     fun duePending(owner: String, now: Long, limit: Int): List<OutboxEvent>
 
-    @Query("SELECT COUNT(*) FROM outbox WHERE state = 'pending'")
-    fun pendingCount(): Int
+    @Query("SELECT COUNT(*) FROM outbox WHERE state = 'pending' AND ownerUserId = :owner")
+    fun pendingCount(owner: String?): Int
 
-    @Query("SELECT COUNT(*) FROM outbox WHERE state = 'failed'")
-    fun failedCount(): Int
+    @Query("SELECT COUNT(*) FROM outbox WHERE state = 'failed' AND ownerUserId = :owner")
+    fun failedCount(owner: String?): Int
 
     @Query("SELECT COALESCE(SUM(payloadBytes),0) FROM outbox WHERE payloadCipher IS NOT NULL")
     fun storedBytes(): Long
 
-    @Query("SELECT * FROM outbox ORDER BY capturedAt DESC LIMIT :limit")
-    fun recent(limit: Int): List<OutboxEvent>
+    @Query("SELECT * FROM outbox WHERE ownerUserId = :owner ORDER BY capturedAt DESC LIMIT :limit")
+    fun recent(owner: String?, limit: Int): List<OutboxEvent>
 
     @Query("UPDATE outbox SET state = 'acked', ackStatus = :status, ackedAt = :now, errorCode = NULL WHERE eventId = :id")
     fun markAcked(id: String, status: String, now: Long)
@@ -121,14 +123,20 @@ interface OutboxDao {
     }
 }
 
-@Database(entities = [OutboxEvent::class, EnrichJob::class], version = 1, exportSchema = false)
+@Database(entities = [OutboxEvent::class, EnrichJob::class], version = 2, exportSchema = false)
 abstract class OutboxDb : RoomDatabase() {
     abstract fun dao(): OutboxDao
 
     companion object {
+        val CLEAR_LEGACY_PREVIEWS = object : Migration(1, 2) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("UPDATE outbox SET preview = ''")
+            }
+        }
         @Volatile private var instance: OutboxDb? = null
         fun get(context: Context): OutboxDb = instance ?: synchronized(this) {
-            instance ?: Room.databaseBuilder(context.applicationContext, OutboxDb::class.java, "ts_outbox.db").build().also { instance = it }
+            instance ?: Room.databaseBuilder(context.applicationContext, OutboxDb::class.java, "ts_outbox.db")
+                .addMigrations(CLEAR_LEGACY_PREVIEWS).build().also { instance = it }
         }
     }
 }

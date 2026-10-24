@@ -12,3 +12,7 @@ Only actions that need owner credentials, device interaction, or release decisio
 | 6 | Real-device test: install APK, grant notification access, generate/receive one legitimate payment notification, report via checklist | pending APK |
 
 The owner has an old Oppo phone available (model/Android version still unknown). A local Android VM is connected via ADB and reports Android 9. VM/synthetic checks can proceed; payment-app compatibility and Oppo background behavior still require physical-phone evidence. The minimum supported Android version is API 24 / Android 7.0.
+
+Local VM follow-up: ADB lists the VM but shell/installation closes the connection; a reconnect and non-streaming install attempt did not restore usable access. Keep/open the intended VM with working ADB before running native instrumentation, or provide the Oppo model/version for physical verification. No notification permissions were granted by Codex.
+
+The Codex 0.1.1 development APK uses this laptop's default debug signer, SHA-1 `1E:7D:C1:BE:84:7E:F4:7C:49:50:3C:E1:36:0B:BE:24:1E:5B:CA:EE`. If using this build for Google sign-in, register its actual fingerprint; it differs from the original intended shared debug key. Preserve the original release key separately for release updates.

@@ -1,5 +1,16 @@
 # Change log
 
+## 2026-10-24T21:59:59+05:30 — Native diagnostics privacy
+
+- Changed: account-scoped recent-event/pending/failed diagnostics; removed plaintext preview writes from capture and decrypt previews only on demand for the bound owner. Room v1→v2 migration clears legacy preview strings without deleting encrypted payloads. Added Android instrumentation coverage for isolation and migration, and corrected the scaffold's stale package assertion.
+- Changed: next Android build version defaults to 0.1.1 / code 2; no release signing material was generated or replaced.
+- Why: native review found financial preview text persisted outside encrypted payloads and a global recent-events query that could expose another account's diagnostics after a switch.
+- Validation: native call sites/diff reviewed; 0.1.1/code 2 debug, fixture and Android test APK builds pass; JVM scaffold smoke 1/1; APK v2 signature verifies and packaged web/config OpenAI-key-pattern scan has zero matches. Isolation/migration instrumentation compiles but could not run: VM ADB streaming install reports `closed`, reconnect/non-streaming recovery did not succeed. Earlier TypeScript/browser results remain separately recorded below.
+- Toolchain recovery: Android SDK 36 installed; downloaded Gradle 8.14.3 binary distribution matches the official SHA-256 `bd71102213493060956ec229d946beee57158dbd89d0e62b91bca0fa2c5f3531`. Initial wrapper/all-distribution download attempts timed out. Manual verified distribution used for the local build; no checksum/TLS validation bypassed.
+- Limitations: no physical-phone capture, live credentials/OAuth/deployment or original release-key access yet. Do not treat code review or an APK build as physical-device evidence.
+
+Build/packaging verification recorded at 2026-10-24T22:08:44+05:30; details and checksums: `docs/evidence/codex-android-0.1.1.md`.
+
 ## 2026-10-24T21:47:23+05:30 — Codex continuation and submission records
 
 - Changed: strict English monetary-word normalization and independent AI amount validation in domain/API; tests now cover spoken words and prevent balance/invented amounts from being accepted.

@@ -86,3 +86,5 @@ See `docs/OWNER_ACTIONS.md` for Google OAuth clients (web + Android release/debu
 ## Known limitations
 
 Only notifications from selected, installed apps that post readable text are captured; historical notifications from before access was granted are unavailable; Android may delay background sync; receipt originals are local-only; public APK install may be blocked by Play Protect (a distribution limitation). Unverified items are listed in `docs/PROGRESS.md`.
+
+Native diagnostics are scoped to the bound account. Notification text stays in the Keystore-encrypted payload; previews are decrypted on demand, rather than persisted as plaintext. Room schema version 2 includes a migration clearing legacy preview strings while retaining encrypted payloads. Current build/instrumentation status is recorded in progress; this is not a claim of physical-device verification.

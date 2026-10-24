@@ -15,6 +15,8 @@ The screenshot is captured before Undo; the test subsequently clicks Undo and ve
 
 ## Earlier Devin evidence
 
+Current native build/signature checks and the failed local VM install are in [Codex Android 0.1.1](codex-android-0.1.1.md). Native instrumentation execution remains pending.
+
 - [Overview browser fixture](m1-e2e-overview-mobile.png)
 - [Synthetic emulator listener](m0-emulator-listener-logcat.txt)
 - [Emulator lifecycle](m0-emulator-lifecycle.txt)
