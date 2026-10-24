@@ -53,3 +53,8 @@
 | API (local) — M6 logout/deletion | logout → token 401; account deletion removes drafts, receipt_links, ai_operations, txn_suggestions, transactions, sessions, usage_counters | as spec §9 | pass | same | 2026-10-24 |
 | Client — M6 local data | sign-out offers deleting receipt photos (browser) / pending captures + photos (Android); account deletion always clears them; Android backup/device-transfer exclude all app domains (`allowBackup=false`) | as spec §9/§17 | typecheck/build only; Android backup rules from M0 | — | 2026-10-24 |
 | D1/Worker errors on Cloudflare | D1_ERROR/limit → 503 retryable with Retry-After; native sync defers with jitter; enrichment capped at 5 attempts | — | mapping implemented; **pending** measured run on deployed Free tier (needs Cloudflare credentials) | — | — |
+| Release APK — signing/hardening | signed with release key (SHA-1 81:48:…:B8:D8), v2, no debuggable/cleartext, backup off, no secrets/debug host in APK | as spec §18 | pass | build VM | 2026-10-24 |
+| Release APK — developer install (emulator) | adb install, launch, listener connects after access grant, fixture source hidden | — | pass (emulator only, not real capture) | ts36 emulator | 2026-10-24 |
+| Release APK — developer install (physical phone) | — | — | **pending owner phone / USB debugging** | — | — |
+| Release APK — public install | download link → install → Play Protect outcome recorded separately | — | **pending owner phone**; Play Protect block would be a distribution limitation, not a launch | — | — |
+| Production deploy | Worker + D1 Free at expenses.tinkercraft.in (only if hostname free), migrations, smoke | — | **pending CLOUDFLARE_API_TOKEN / ACCOUNT_ID** | — | — |

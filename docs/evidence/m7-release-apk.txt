@@ -1,0 +1,23 @@
+M7 release APK check — 2026-10-24, build VM + emulator ts36 (Android 16/API 36, Google APIs, x86_64)
+
+Build: apps/client `pnpm build` + `cap sync android` + `./gradlew :app:assembleRelease`
+  keystore from owner-controlled secret storage (VM path ~/secure, not in repo)
+Artifact: app-release.apk, 1,929,507 bytes, versionCode 1 / versionName 0.1.0
+  sha256 cc7d46c0ac09156273e12e0f2197590cab32d4438a56d1e4211092705828860c
+apksigner verify: v2 true; signer DN CN=TinkerSpend, O=tinkercraft.in, C=IN
+  signer SHA-1 81:48:00:D8:3A:E4:4B:A9:04:99:EE:2F:52:5D:7C:26:61:81:B8:D8 (= release fingerprint given for OAuth)
+Manifest: allowBackup=false; no android:debuggable; no usesCleartextTraffic
+APK content scan (unzipped): no `sk-`/`sk-proj-` keys, no OPENAI_API_KEY, no private keys, no 10.0.2.2 debug host.
+  Only API origin embedded: https://expenses.tinkercraft.in (not deployed yet)
+
+Developer install (adb install, emulator): Success; MainActivity cold start 1144 ms; no FATAL in logcat.
+  Notification access granted via `cmd notification allow_listener` → listener "Connected" in app UI
+  (docs/evidence/m7-release-emulator-granted.png). Capture shows "Paused" because no account is signed in.
+  The synthetic fixture source is NOT offered in release (BuildConfig.ALLOW_FIXTURE_SOURCE=false); a fixture
+  notification posted to the release build was not captured — expected.
+
+NOT PROVEN by this file:
+  - capture from a real payment app (needs owner phone + selected app)
+  - sign-in/sync in release (needs Google OAuth client + deployed Worker at expenses.tinkercraft.in)
+  - developer install on a physical phone
+  - public APK installation (browser download, "unknown sources", Play Protect outcome) — pending owner phone
