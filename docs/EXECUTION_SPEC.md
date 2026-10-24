@@ -1,5 +1,9 @@
 # Devin execution specification — TinkerSpend
 
+> Workflow amendment, 24 October 2026: the owner explicitly authorized continuing implementation in Codex after the Devin checkpoint. Historical clauses requiring Devin-only execution are superseded by that authorization. Product, privacy, accounting, verification and free-infrastructure requirements remain in force. Current evidence and exceptions are recorded in `PROGRESS.md`, root `AGENTS.md`, `CHANGELOG.md` and `AI_USAGE.md`.
+
+> Product amendment, 25 October 2026: the owner explicitly removed app-by-app source selection. Use one disclosed, owner-bound automatic capture opt-in and Android's app-wide notification-access setting; detect supported sources locally, including recognized bank sender notifications in supported messaging apps. Import current visible alerts and capture new ones. Add alert timestamp/reported-bank metadata and a nonblocking purpose question. Preserve uncertainty, deduplication, account isolation and the no-SMS-inbox restriction. UI visual redesign is deferred at the owner's request. This supersedes historical source-selection steps below; see `NOTIFICATION_CAPTURE.md` and `SECURITY_AND_DEPLOYMENT.md`.
+
 Prepared 24 October 2026. Working product name: **TinkerSpend**. This is a build specification for Devin by Cognition, not a claim that the implementation or phone compatibility has already been tested.
 
 ## 1. Mission and binding constraints
@@ -13,7 +17,7 @@ Binding requirements:
 - **No new paid infrastructure, paid plugins, paid build services, or paid distribution accounts.** OpenAI API usage is the only permitted additional operating expense. Existing domain renewal and existing Devin entitlement are outside the new infrastructure budget; do not buy either again.
 - Use free/open-source development dependencies and Cloudflare's Workers Free and D1 Free plans. Do not enable a paid plan, trial that requires later payment, metered add-on, or automatic paid upgrade.
 - The installed Android app performs notification collection. The website/PWA provides the dashboard and manual inputs. A PWA cannot read other apps' notification streams.
-- Use explicit notification-access permission and explicit source selection. Do not scrape banking screens, use accessibility services, intercept OTPs, request SMS inbox permission, request UPI PINs, or attempt direct private UPI APIs.
+- Use explicit notification-access permission and one disclosed capture opt-in per signed-in owner; recognize eligible sources automatically without individual app prompts. Do not scrape banking screens, use accessibility services, intercept OTPs, request SMS inbox permission, request UPI PINs, or attempt direct private UPI APIs.
 - Never promise that all payments will have readable notifications. Missing alerts, redacted contents, restricted devices, and force-stopped apps create gaps.
 - Keep the OpenAI key exclusively on the backend. Do not include it in JavaScript bundles, Android assets, APK resources, source control, or logs.
 - Complete and verify the Android capture capability before spending substantial effort on visual polish.
@@ -192,7 +196,7 @@ The collector must function without a React page, WebView callback, or JavaScrip
 Processing sequence:
 
 1. Receive the notification event in Kotlin.
-2. Verify capture is enabled, a user is bound, and the source package is selected.
+2. Verify capture is enabled, a user is bound, automatic consent belongs to that user, and the notification passes the eligible source/sender filter.
 3. Inspect supported text fields: title, text, expanded text and text lines. Ignore group summaries unless independently validated as the only relevant event.
 4. Filter advertisements, OTP/login notices, balance-only notices and unrelated content locally. Never upload a whole notification stream.
 5. Create a small normalized event with a stable event UUID, device ID, package, notification key, posting timestamp, capture timestamp, content hash, parser version and minimally necessary payment text/fields.
@@ -472,7 +476,7 @@ Build five primary screens:
 4. **Review:** unclear category, missing amount, unknown transaction intent, receipt mismatch, possible duplicate and conflicting source status. Each card explains exactly what needs a decision.
 5. **Settings:** Google account/devices, supported payment sources, notification permission/status, capture pause, AI processing choice, timezone, category rules, CSV export, deletion and build/version diagnostics.
 
-Android onboarding: sign in → explain exactly what payment notification data is processed → user selects supported sources → user opens Android notification-access settings → verify listener connection → show a test/check status. Permission refusal leaves manual entry usable.
+Android onboarding: sign in → explain exactly what notification data is processed → user enables automatic capture → open Android's app-wide TinkerSpend notification-access setting → verify listener connection and import accessible current alerts. No bank/payment-app selection or individual permissions are requested. Permission refusal leaves manual entry usable. The OS can require separate restricted-settings approval for a sideloaded application; do not bypass it.
 
 Browser onboarding must accurately state that notification capture requires the Android installation. Do not display a fake browser “Enable UPI notification reading” permission button.
 

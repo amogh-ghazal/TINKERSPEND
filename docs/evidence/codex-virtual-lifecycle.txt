@@ -1,0 +1,5 @@
+MainActivity task entries before lifecycle tests: 0
+PASS: process killed; system restarted native listener; new synthetic payment captured.
+PASS: revoked notification access prevents capture; regrant restores capture.
+10-24 23:35:17.657  1449  1918 I TSDebug : state install=79bfda9c-fb61-412a-b0b1-ef04cf57553f authPaused=false lastSyncAt=0 owner=synthetic-emulator-owner enabled=true selected=[in.tinkercraft.tinkerspend.fixture] listener=true pending=4 failed=0 lastEventAt=1792865115027
+PASS: encrypted pending outbox survives reboot; new payment captured without opening MainActivity.

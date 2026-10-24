@@ -1,0 +1,20 @@
+{
+  "_note": "SYNTHETIC fixtures written from publicly described notification styles. They are not captured from a real device and do not prove live UPI/bank integration. Replace/extend with owner-approved redacted captures in fixtures/real-redacted/.",
+  "cases": [
+    { "name": "gpay paid merchant", "input": { "title": "₹180 paid to Meghana Foods", "text": "Paid via UPI. UPI Ref No 412345678901" }, "expect": { "type": "payment", "amountPaise": 18000, "direction": "debit", "status": "successful", "kindHint": "unknown", "counterparty": "Meghana Foods", "reference": { "namespace": "upi_ref", "value": "412345678901" } } },
+    { "name": "bank debit with balance and account suffix", "input": { "title": "Account debited", "text": "Rs.300.00 debited from A/c XX1234 on 24-10-26 to VPA dmart@ybl UPI Ref 498765432101. Avl Bal Rs.12,345.67" }, "expect": { "type": "payment", "amountPaise": 30000, "direction": "debit", "status": "successful", "reference": { "namespace": "upi_ref", "value": "498765432101" } } },
+    { "name": "received salary credit", "input": { "title": "Money received", "text": "INR 1,000.00 credited to your account from ACME PAYROLL. UTR HDFCR52026102400012" }, "expect": { "type": "payment", "amountPaise": 100000, "direction": "credit", "status": "successful", "kindHint": "income", "reference": { "namespace": "utr", "value": "HDFCR52026102400012" } } },
+    { "name": "failed payment", "input": { "title": "Payment failed", "text": "Your payment of ₹400 to Croma could not be completed. Money will not be debited." }, "expect": { "type": "payment", "amountPaise": 40000, "status": "failed" } },
+    { "name": "pending payment", "input": { "title": "Payment pending", "text": "₹700 to Urban Company is processing. We'll update you shortly." }, "expect": { "type": "payment", "amountPaise": 70000, "status": "pending" } },
+    { "name": "refund", "input": { "title": "Refund received", "text": "₹50 refund credited from DMart for your earlier payment" }, "expect": { "type": "payment", "amountPaise": 5000, "direction": "credit", "kindHint": "refund" } },
+    { "name": "self transfer", "input": { "title": "₹2,000 sent", "text": "₹2,000 sent to Self transfer - your HDFC account ending 4321" }, "expect": { "type": "payment", "amountPaise": 200000, "direction": "debit", "kindHint": "transfer" } },
+    { "name": "person payment ambiguous", "input": { "title": "₹250 paid to Rahul Sharma", "text": "Paid via UPI" }, "expect": { "type": "payment", "amountPaise": 25000, "direction": "debit", "kindHint": "unknown", "counterparty": "Rahul Sharma" } },
+    { "name": "otp ignored", "input": { "title": "OTP", "text": "123456 is your OTP for payment of Rs 999. Do not share." }, "expect": { "type": "ignored", "reason": "otp" } },
+    { "name": "promotion ignored", "input": { "title": "Win up to ₹500 cashback!", "text": "Limited time offer on bill payments" }, "expect": { "type": "ignored", "reason": "promotion" } },
+    { "name": "balance only", "input": { "title": "Balance update", "text": "Available balance is Rs. 5,432.10 in A/c XX9876" }, "expect": { "type": "ignored", "reason": "balance_only" } },
+    { "name": "collect request ignored", "input": { "title": "Ravi is requesting ₹500", "text": "Tap to pay" }, "expect": { "type": "ignored", "reason": "request" } },
+    { "name": "no amount", "input": { "title": "Google Pay", "text": "Your rewards are waiting" }, "expect": { "type": "ignored", "reason": "no_amount" } },
+    { "name": "large indian grouping", "input": { "title": "Paid", "text": "₹1,23,456.78 paid to Reliance Digital" }, "expect": { "type": "payment", "amountPaise": 12345678, "direction": "debit", "counterparty": "Reliance Digital" } },
+    { "name": "reversal", "input": { "title": "Payment reversed", "text": "₹400 debited earlier for Croma has been reversed to your account" }, "expect": { "type": "payment", "amountPaise": 40000, "status": "reversed" } }
+  ]
+}

@@ -1,0 +1,4 @@
+Observed one pending INR 700 transaction before posting the success update.
+10-24 23:36:40.755  1449  2201 I TSDebug : state install=79bfda9c-fb61-412a-b0b1-ef04cf57553f authPaused=false lastSyncAt=1792865199002 owner=e0a9e081-bf9e-422b-9219-ae0c92bf4391 enabled=true selected=[in.tinkercraft.tinkerspend.fixture] listener=true pending=0 failed=0 lastEventAt=1792865198810
+{"amount":"700.00","amount_paise":70000,"payment_status":"successful","source":"notification","counterparty":"Metro Mart","review_state":"needs_review"}
+PASS: native WorkManager -> local Worker/D1; pending -> successful upgrades one INR 700 transaction. Synthetic source and local fake identity only.

@@ -1,0 +1,18 @@
+$ pnpm --filter @tinkerspend/api run test
+$ vitest run
+
+=======================================================================================
+WARNING: @cloudflare/vitest-pool-workers has been renamed to @cloudflare/vitest-plugin.
+This package will not receive future updates.
+Run `npx @cloudflare/codemods vitest:pool-workers-to-vitest-plugin` to migrate.
+=======================================================================================
+
+
+ RUN  v4.1.12 C:/Users/amogh/Documents/Codex/2026-10-24/st/outputs/TINKERSPEND/apps/api
+
+
+ Test Files  8 passed (8)
+      Tests  48 passed (48)
+   Start at  00:36:07
+   Duration  13.93s (transform 2.70s, setup 9.44s, import 234ms, tests 6.36s, environment 1ms)
+

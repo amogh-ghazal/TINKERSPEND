@@ -1,0 +1,21 @@
+# M2 emulator sync against LOCAL wrangler dev + local D1 (synthetic fixture source; NOT real payment app, NOT deployed Cloudflare)
+# 6 older events owned by 'emu-test-owner' stayed pending; only the 4 events captured under the signed-in owner uploaded.
+--------- beginning of main
+10-24 15:21:44.865  3988  4012 I TSDebug : state install=2eab146c-825c-4133-953c-30d0b5895389 authPaused=false lastSyncAt=0 owner=d345e44a-13c3-4dd7-930e-c481747ae575 enabled=true selected=[in.tinkercraft.tinkerspend.fixture] listener=true pending=10 failed=0 lastEventAt=1792855270101
+10-24 15:22:04.891  3988  4045 I TSDebug : state install=2eab146c-825c-4133-953c-30d0b5895389 authPaused=false lastSyncAt=0 owner=d345e44a-13c3-4dd7-930e-c481747ae575 enabled=true selected=[in.tinkercraft.tinkerspend.fixture] listener=true pending=10 failed=0 lastEventAt=1792855270101
+10-24 15:22:58.810  3988  4100 I TSDebug : state install=2eab146c-825c-4133-953c-30d0b5895389 authPaused=false lastSyncAt=1792855351984 owner=d345e44a-13c3-4dd7-930e-c481747ae575 enabled=true selected=[in.tinkercraft.tinkerspend.fixture] listener=true pending=6 failed=0 lastEventAt=1792855270101
+# server ledger (GET /api/v1/transactions?month=2026-10):
+700.00 unknown successful needs_review "Metro Mart is pending" notification
+249.00 unknown successful needs_review "Sri Balaji Stores" notification
+1500.00 income successful confirmed "Asha Verma" notification
+
+# Second run after counterparty fix + userInitiated (REPLACE) sync-now; sync ran within seconds instead of waiting behind backoff:
+--------- beginning of main
+10-24 15:23:54.819  4120  4191 I TSCapture: captured event from in.tinkercraft.tinkerspend.fixture
+10-24 15:23:57.576  4120  4229 I TSDebug : state install=2eab146c-825c-4133-953c-30d0b5895389 authPaused=false lastSyncAt=1792855435407 owner=d345e44a-13c3-4dd7-930e-c481747ae575 enabled=true selected=[in.tinkercraft.tinkerspend.fixture] listener=true pending=6 failed=0 lastEventAt=1792855434809
+10-24 15:24:09.606  4120  4236 I TSDebug : state install=2eab146c-825c-4133-953c-30d0b5895389 authPaused=false lastSyncAt=1792855435407 owner=d345e44a-13c3-4dd7-930e-c481747ae575 enabled=true selected=[in.tinkercraft.tinkerspend.fixture] listener=true pending=6 failed=0 lastEventAt=1792855434809
+# server ledger:
+315.00 unknown pending needs_review "Green Leaf Cafe" notification
+700.00 unknown successful needs_review "Metro Mart is pending" notification
+249.00 unknown successful needs_review "Sri Balaji Stores" notification
+1500.00 income successful confirmed "Asha Verma" notification

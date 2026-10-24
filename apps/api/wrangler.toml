@@ -1,0 +1,48 @@
+# Cloudflare Workers FREE + D1 FREE only. Do not enable Workers Paid, R2, Queues, Durable Objects with billing, or Logpush.
+name = "tinkerspend-staging"
+main = "src/index.ts"
+compatibility_date = "2026-08-22"
+compatibility_flags = ["nodejs_compat"]
+workers_dev = true
+
+[assets]
+directory = "../client/dist"
+not_found_handling = "single-page-application"
+run_worker_first = ["/api/*"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "tinkerspend-staging"
+database_id = "1df12f82-bd83-4e00-981e-e1bbe96f25e1"
+migrations_dir = "migrations"
+
+[vars]
+APP_ENV = "staging"
+ALLOWED_ORIGINS = "http://localhost:5173"
+GOOGLE_WEB_CLIENT_ID = ""
+OPENAI_TRANSCRIBE_MODEL = "gpt-4o-mini-transcribe"
+OPENAI_EXTRACT_MODEL = "gpt-4.1-mini"
+AI_DAILY_GLOBAL_LIMIT = "100"
+AI_USER_CLASSIFY_LIMIT = "50"
+SESSION_DAYS = "30"
+AUTH_CHALLENGE_DAILY_LIMIT = "1000"
+
+[env.production]
+name = "tinkerspend"
+workers_dev = false
+routes = [{ pattern = "expenses.tinkercraft.in", custom_domain = true }]
+[env.production.vars]
+APP_ENV = "production"
+ALLOWED_ORIGINS = "https://expenses.tinkercraft.in"
+GOOGLE_WEB_CLIENT_ID = "639238474808-b8ga9g3avnlts7npqds3ns8fkkaq02u5.apps.googleusercontent.com"
+OPENAI_TRANSCRIBE_MODEL = "gpt-4o-mini-transcribe"
+OPENAI_EXTRACT_MODEL = "gpt-4.1-mini"
+AI_DAILY_GLOBAL_LIMIT = "100"
+AI_USER_CLASSIFY_LIMIT = "50"
+SESSION_DAYS = "30"
+AUTH_CHALLENGE_DAILY_LIMIT = "1000"
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "tinkerspend-prod"
+database_id = "c9fbf336-0be0-4048-ac07-c42cff68cff3"
+migrations_dir = "migrations"

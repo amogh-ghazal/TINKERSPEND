@@ -1,0 +1,10 @@
+--------- beginning of main
+10-24 15:09:20.966  4570  4620 I TSDebug : state owner=emu-test-owner enabled=true selected=[in.tinkercraft.tinkerspend.fixture] listener=true pending=0 failed=0 lastEventAt=0
+10-24 15:09:21.574  4570  4657 I TSCapture: captured event from in.tinkercraft.tinkerspend.fixture
+10-24 15:09:29.659  4570  4657 I TSCapture: captured event from in.tinkercraft.tinkerspend.fixture
+10-24 15:09:33.399  4570  4755 I TSDebug : state owner=emu-test-owner enabled=true selected=[in.tinkercraft.tinkerspend.fixture] listener=true pending=2 failed=0 lastEventAt=1792854569640
+    NotificationRecord(0x0d8dba97: pkg=in.tinkercraft.tinkerspend.fixture user=UserHandle{0} id=0 tag=0|in.tinkercraft.tinkerspend.fixture|g:Aggregate_AlertingSection importance=3 key=0|in.tinkercraft.tinkerspend.fixture|0|0|in.tinkercraft.tinkerspend.fixture|g:Aggregate_AlertingSection|10217|0|in.tinkercraft.tinkerspend.fixture|g:Aggregate_AlertingSection: Notification(channel=pay shortcut=null contentView=null vibrate=null sound=null defaults=0 flags=LOCAL_ONLY|GROUP_SUMMARY|AUTOGROUP_SUMMARY color=0x00000000 groupKey=0|in.tinkercraft.tinkerspend.fixture|g:Aggregate_AlertingSection vis=PRIVATE))
+      opPkg=in.tinkercraft.tinkerspend.fixture
+      icon=Icon(typ=RESOURCE pkg=in.tinkercraft.tinkerspend.fixture id=0x01080079)
+      key=0|in.tinkercraft.tinkerspend.fixture|0|0|in.tinkercraft.tinkerspend.fixture|g:Aggregate_AlertingSection|10217|0|in.tinkercraft.tinkerspend.fixture|g:Aggregate_AlertingSection
+      groupKey=0|in.tinkercraft.tinkerspend.fixture|g:Aggregate_AlertingSection

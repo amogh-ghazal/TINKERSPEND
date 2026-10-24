@@ -1,0 +1,5 @@
+MainActivity task entries before lifecycle tests: 0
+PASS: process killed; system restarted native listener; new synthetic payment captured.
+PASS: revoked notification access prevents capture; regrant restores capture.
+10-25 00:17:40.611  1443  1856 I TSDebug : state install=b4f59e7e-8487-4d65-8a79-f1365251e22f authPaused=false lastSyncAt=0 owner=synthetic-automatic-owner enabled=true selected=[] listener=true pending=6 failed=0 lastEventAt=1792867658229
+PASS: encrypted pending outbox survives reboot; new payment captured without opening MainActivity.

@@ -1,0 +1,16 @@
+== baseline
+state owner=emu-test-owner enabled=true selected=[in.tinkercraft.tinkerspend.fixture] listener=true pending=2 failed=0 lastEventAt=1792854569640
+== process killed (kill -9), then notification posted
+pid after kill+5s: 4835
+state owner=emu-test-owner enabled=true selected=[in.tinkercraft.tinkerspend.fixture] listener=true pending=3 failed=0 lastEventAt=1792854753996
+== access revoked, notification posted
+state owner=emu-test-owner enabled=true selected=[in.tinkercraft.tinkerspend.fixture] listener=false pending=3 failed=0 lastEventAt=1792854753996
+== access re-granted, notification posted
+state owner=emu-test-owner enabled=true selected=[in.tinkercraft.tinkerspend.fixture] listener=true pending=4 failed=0 lastEventAt=1792854768255
+== reboot, app never opened, notification posted
+state owner=emu-test-owner enabled=true selected=[in.tinkercraft.tinkerspend.fixture] listener=true pending=5 failed=0 lastEventAt=1792854822969
+== force-stop (documented unsupported), notification posted
+listener entries in dumpsys: 4
+--------- beginning of main
+10-24 15:13:43.140  1711  3438 I TSCapture: captured event from in.tinkercraft.tinkerspend.fixture
+10-24 15:13:48.854  3473  3516 I TSCapture: captured event from in.tinkercraft.tinkerspend.fixture
