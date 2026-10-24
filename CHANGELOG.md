@@ -1,5 +1,11 @@
 # Change log
 
+## 2026-10-25 — Production account access
+
+- Changed: added the owner's configured Google account to the production D1 invite allowlist.
+- Validation: the remote D1 insert succeeded against `tinkerspend-prod`; the live site continues to serve over HTTPS.
+- Limits: this only authorizes the configured owner account. Android OAuth configuration, the private OpenAI Worker secret, release signing and physical-device validation remain pending.
+
 ## 2026-10-25T02:02:02.1655509+05:30 — Production deployment
 
 - Changed: configured the production Web OAuth client and deployed the Worker plus static site to `https://expenses.tinkercraft.in` on Cloudflare Workers Free + D1 Free.
