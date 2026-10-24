@@ -24,7 +24,9 @@ Primary references checked 25 October 2026: [Workers limits](https://developers.
 
 ## Before a public deployment
 
-Complete the private inputs in `OWNER_ACTIONS.md`: verify the actual account remains Free; create project-scoped Worker/D1 resources and set real IDs; set the public Google client ID and exact HTTPS origins; keep OpenAI as a Worker secret; register actual APK signing fingerprints and invited accounts. `deploy.sh` derives the website's public client ID from the selected backend config. Keep the existing domain/DNS records intact. No secret values belong in chat, Git, APKs or form submissions.
+Cloudflare login is connected and separate APAC staging/production D1 databases are provisioned and migrated. Their IDs are set in `apps/api/wrangler.toml`. The account billing plan and `tinkercraft.in` zone access are still unverified. Complete the remaining private inputs in `OWNER_ACTIONS.md`: confirm Free billing; set the public Google client ID and exact HTTPS origins; keep OpenAI as a Worker secret; register actual APK signing fingerprints and invited accounts. `deploy.sh` derives the website's public client ID from the selected backend config. Keep existing domain/DNS records intact. No secret values belong in chat, Git, APKs or form submissions.
+
+After the original release keystore is available, build and verify the signed APK, then run `pnpm package:android-download <signed-apk>`. This stages versioned and `latest` APK URLs plus SHA256 sums into the static website build. The script enforces the existing release signer check and Cloudflare's static asset size cap. Do not stage debug, local-test or unsigned APKs.
 
 `pnpm test:deploy-safety` runs 12 local guard cases without network/deployment. The deploy guard rejects invalid environment names, test authentication, placeholder databases, missing OAuth config, non-HTTPS/mixed origins and configured unapproved metered features. It cannot inspect or guarantee an account's billing tier. A live Free-tier deployment must still measure CPU/D1 usage and verify error/retry behavior.
 

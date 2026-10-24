@@ -13,7 +13,7 @@ run_worker_first = ["/api/*"]
 [[d1_databases]]
 binding = "DB"
 database_name = "tinkerspend-staging"
-database_id = "00000000-0000-0000-0000-000000000000"
+database_id = "1df12f82-bd83-4e00-981e-e1bbe96f25e1"
 migrations_dir = "migrations"
 
 [vars]
@@ -44,5 +44,5 @@ AUTH_CHALLENGE_DAILY_LIMIT = "1000"
 [[env.production.d1_databases]]
 binding = "DB"
 database_name = "tinkerspend-prod"
-database_id = "00000000-0000-0000-0000-000000000000"
+database_id = "c9fbf336-0be0-4048-ac07-c42cff68cff3"
 migrations_dir = "migrations"

@@ -57,6 +57,7 @@ pnpm android:debug    # debug APK (includes the synthetic fixture source, labell
 pnpm android:test     # JVM unit tests
 TS_RELEASE_KEYSTORE=/path/release.jks ANDROID_RELEASE_KEYSTORE_PASSWORD=... pnpm android:release
 pnpm release:check path/to/app-release.apk   # signer, v2, no debuggable/cleartext, no secrets
+pnpm package:android-download path/to/app-release.apk  # stage verified signed APK in website build
 ```
 
 Windows equivalent after setting `JAVA_HOME` (JDK 21) and `ANDROID_HOME` (SDK): `pnpm android:sync`, then `cd apps/client/android` and `.\gradlew.bat :app:testDebugUnitTest :app:assembleDebug :app:assembleDebugAndroidTest :fixture:assembleDebug`. Set `TS_DEBUG_KEYSTORE` to the privately backed-up shared debug key when testing Google sign-in; a default local debug signer will have a different OAuth fingerprint. Signing keys/passwords must not be committed.

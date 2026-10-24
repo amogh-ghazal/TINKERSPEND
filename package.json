@@ -22,6 +22,7 @@
     "deploy:staging": "bash scripts/deploy.sh staging",
     "deploy:production": "bash scripts/deploy.sh production",
     "release:check": "bash scripts/release-check.sh",
+    "package:android-download": "bash scripts/package-android-download.sh",
     "test:deploy-safety": "node scripts/test-deploy-safety.mjs"
   },
   "devDependencies": {
