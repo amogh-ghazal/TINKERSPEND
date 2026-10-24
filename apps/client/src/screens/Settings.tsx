@@ -22,7 +22,9 @@ export function Settings({ me, onSignedOut }: { me: Me; onSignedOut: () => void 
     let purge = false;
     if (isNative) {
       const { count } = await AuthBridge.pendingForOtherAccounts().catch(() => ({ count: 0 }));
-      purge = confirm(`Delete not-yet-synced captured payments on this phone?${count ? ` (${count} from another account)` : ""}\nOK = delete, Cancel = keep them encrypted for this account only.`);
+      purge = confirm(`Delete not-yet-synced captured payments and receipt photos on this phone?${count ? ` (${count} from another account)` : ""}\nOK = delete, Cancel = keep them encrypted for this account only.`);
+    } else {
+      purge = confirm("Delete receipt photos stored in this browser?\nOK = delete, Cancel = keep them (only this account's receipts can show them).");
     }
     await signOut(purge); onSignedOut();
   }

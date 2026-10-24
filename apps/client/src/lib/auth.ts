@@ -1,3 +1,4 @@
+import { clearReceipts } from "./receipts";
 import { api } from "./api";
 import { AuthBridge, isNative } from "../native";
 import type { Me } from "./types";
@@ -47,5 +48,6 @@ export async function renderWebSignIn(el: HTMLElement, onUser: (u: Me) => void, 
 export async function signOut(purgePending = false): Promise<void> {
   try { await api("POST", "/auth/logout", {}); } catch { /* session may already be gone */ }
   if (isNative) await AuthBridge.clearSession({ purgePending });
+  if (purgePending) await clearReceipts().catch(() => undefined);
   else { const w = window as unknown as { google?: Gsi }; w.google?.accounts.id.disableAutoSelect(); }
 }
