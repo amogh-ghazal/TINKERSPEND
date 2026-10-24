@@ -51,7 +51,7 @@ async function photo(page: Page) {
   const png = await page.evaluate(() => { const c = document.createElement("canvas"); c.width = 120; c.height = 200;
     const ctx = c.getContext("2d")!; ctx.fillStyle = "white"; ctx.fillRect(0, 0, 120, 200); ctx.fillStyle = "black"; ctx.fillText("SYNTHETIC RECEIPT", 2, 20);
     return c.toDataURL("image/png").split(",")[1]!; });
-  await page.getByLabel("Receipt from gallery").setInputFiles({ name: "synthetic-receipt.png", mimeType: "image/png", buffer: Buffer.from(png, "base64") });
+  await page.getByLabel("Attach a receipt photo").setInputFiles({ name: "synthetic-receipt.png", mimeType: "image/png", buffer: Buffer.from(png, "base64") });
   await expect(page.getByRole("img", { name: "Receipt to read" })).toBeVisible();
   await page.getByRole("button", { name: "Read receipt", exact: true }).click();
   await expect(page.getByTestId("draft")).toHaveCount(1);
@@ -62,7 +62,7 @@ for (const mode of ["correct", "total", "attach"] as const) {
   test(`receipt photo → ${mode} → one ledger item with a local photo`, async ({ page }, info) => {
     await login(page, `drafts-${info.project.name}@e2e.test`);
     const state = await receiptFixture(page, mode);
-    await page.getByRole("button", { name: "Add", exact: true }).click();
+    await page.getByRole("button", { name: "Assistant", exact: true }).click();
     await photo(page);
     expect(state.uploaded()?.mime_type).toBe("image/jpeg");
     expect(Buffer.from(String(state.uploaded()?.data_base64), "base64").length).toBeLessThanOrEqual(750 * 1024);

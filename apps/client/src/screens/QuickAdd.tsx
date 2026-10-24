@@ -28,6 +28,7 @@ function pickMime() {
 }
 
 type Rec = { state: "idle" } | { state: "recording"; startedAt: number } | { state: "recorded"; startedAt: number; blob: Blob; durationMs: number; url: string } | { state: "uploading"; startedAt: number; blob: Blob; durationMs: number; url: string };
+type ChatTurn = { id: number; from: "person" | "assistant"; text: string };
 
 export function QuickAdd({ onSaved }: { onSaved: (t: Txn) => void }) {
   const [text, setText] = useState("");
@@ -41,6 +42,9 @@ export function QuickAdd({ onSaved }: { onSaved: (t: Txn) => void }) {
   const timer = useRef<number | null>(null);
   const voiceOp = useRef<string>(newOperationId());
   const [photo, setPhoto] = useState<{ blob: Blob; url: string; takenAt: number; op: string; busy: boolean } | null>(null);
+  const [turns, setTurns] = useState<ChatTurn[]>([{ id: 0, from: "assistant", text: "Hi! Tell me what you spent on, send a receipt, or record a voice note. I’ll prepare an editable draft for you to review." }]);
+  const nextTurnId = useRef(1);
+  const addTurn = (from: ChatTurn["from"], message: string) => setTurns((items) => [...items, { id: nextTurnId.current++, from, text: message }]);
 
   async function pickPhoto(f: File | undefined) {
     if (!f) return;
@@ -60,6 +64,8 @@ export function QuickAdd({ onSaved }: { onSaved: (t: Txn) => void }) {
     try {
       const r = await api<{ drafts: Draft[] }>("POST", "/drafts/receipt", { operation_id: photo.op, reference_time: photo.takenAt, timezone: tz(), mime_type: "image/jpeg", data_base64: await blobToBase64(photo.blob) });
       for (const d of r.drafts) await saveReceipt(d.id, photo.blob).catch(() => undefined);
+      addTurn("person", "Sent a receipt photo");
+      addTurn("assistant", `I read the receipt and prepared ${r.drafts.length} editable draft${r.drafts.length === 1 ? "" : "s"}. Check the details below before saving.`);
       URL.revokeObjectURL(photo.url); setPhoto(null); await load();
     } catch (e) {
       setPhoto({ ...photo, busy: false, op: newOperationId() });
@@ -74,6 +80,8 @@ export function QuickAdd({ onSaved }: { onSaved: (t: Txn) => void }) {
     setBusy(true); setErr(null); setInfo(null);
     try {
       const r = await api<{ drafts: Draft[]; method: string; note: string | null }>("POST", "/drafts/text", { operation_id: newOperationId(), text: t, reference_time: referenceTime, timezone: tz() });
+      addTurn("person", t);
+      addTurn("assistant", r.drafts.length ? `I prepared ${r.drafts.length} editable draft${r.drafts.length === 1 ? "" : "s"}. Check the details below, then save only what’s correct.` : "I couldn’t find a clear expense in that message. Try adding the amount or a little more detail.");
       if (r.method === "deterministic" && r.note) setInfo("Parsed on the server without AI; please check each draft.");
       setText(""); await load();
     } catch (e) { setErr(errText(e)); } finally { setBusy(false); }
@@ -128,54 +136,61 @@ export function QuickAdd({ onSaved }: { onSaved: (t: Txn) => void }) {
 
   async function upload() {
     if (rec.state !== "recorded") return;
-    setRec({ ...rec, state: "uploading" }); setErr(null);
+    const recording = rec;
+    setRec({ ...recording, state: "uploading" }); setErr(null);
     try {
-      await api("POST", "/drafts/voice", { operation_id: voiceOp.current, reference_time: rec.startedAt, timezone: tz(), mime_type: rec.blob.type || "audio/webm", data_base64: await blobToBase64(rec.blob), duration_ms: Math.max(1, rec.durationMs) });
-      URL.revokeObjectURL(rec.url); setRec({ state: "idle" }); await load();
+      await api("POST", "/drafts/voice", { operation_id: voiceOp.current, reference_time: recording.startedAt, timezone: tz(), mime_type: recording.blob.type || "audio/webm", data_base64: await blobToBase64(recording.blob), duration_ms: Math.max(1, recording.durationMs) });
+      addTurn("person", `Sent a voice note · ${(recording.durationMs / 1000).toFixed(1)} seconds`);
+      addTurn("assistant", "I transcribed the voice note and prepared a draft. Check the transcript and expense details below before saving.");
+      URL.revokeObjectURL(recording.url); setRec({ state: "idle" }); await load();
     } catch (e) {
       // Keep the recording so nothing is lost; a new attempt uses a new operation only when the user asks.
-      setRec({ ...rec, state: "recorded" }); voiceOp.current = newOperationId();
+      setRec({ ...recording, state: "recorded" }); voiceOp.current = newOperationId();
       setErr(e instanceof ApiFailure && e.code === "outcome_unknown" ? "Transcription didn't answer in time and won't be retried automatically. Try again or type it." : errText(e));
     }
   }
 
   return (
-    <section className="card" aria-label="Quick add">
-      <h2>Quick add</h2>
-      <form className="form" onSubmit={(e) => { e.preventDefault(); if (text.trim()) void extractText(text.trim(), Date.now()); }}>
-        <label>Describe expenses<textarea rows={2} maxLength={4000} value={text} onChange={(e) => setText(e.target.value)} placeholder="Yesterday, lunch 180 and auto 80" /></label>
-        <div className="row">
-          <button type="submit" disabled={busy || !text.trim()}>{busy ? "Reading…" : "Make drafts"}</button>
-          {rec.state === "idle" && <button type="button" className="secondary" onClick={startRec}>Record</button>}
-          {rec.state === "recording" && <>
-            <button type="button" onClick={() => stopRec(rec.startedAt)}>Stop ({Math.floor(elapsed / 1000)}s / 60s)</button>
-            <button type="button" className="secondary" onClick={cancelRec}>Cancel</button>
-          </>}
-        </div>
-      </form>
-      <div className="row">
-        <label className="button secondary">Scan receipt<input hidden type="file" accept="image/jpeg,image/png" capture="environment" onChange={(e) => { void pickPhoto(e.target.files?.[0]); e.target.value = ""; }} /></label>
-        <label className="button secondary">Receipt from gallery<input hidden type="file" accept="image/jpeg,image/png" onChange={(e) => { void pickPhoto(e.target.files?.[0]); e.target.value = ""; }} /></label>
+    <section className="card assistant-workspace" aria-label="TinkerSpend expense assistant">
+      <div className="assistant-heading">
+        <div><p className="eyebrow">YOUR EXPENSE ASSISTANT</p><h2>Just tell me what happened</h2><p className="muted">Send a message, voice note, or receipt. I’ll turn it into a draft for you to review.</p></div>
+        <span className="demo-badge live-badge"><span />Connected to your ledger</span>
       </div>
-      {photo && (
-        <div className="row" aria-label="Receipt photo">
-          <img src={photo.url} alt="Receipt to read" className="receipt-thumb" />
-          <button disabled={photo.busy} onClick={readReceipt}>{photo.busy ? "Reading…" : "Read receipt"}</button>
-          <button className="secondary" disabled={photo.busy} onClick={() => { URL.revokeObjectURL(photo.url); setPhoto(null); }}>Discard photo</button>
+
+      <div className="chat-frame">
+        <div className="chat-topbar">
+          <div className="chat-avatar" aria-hidden="true">T</div>
+          <div className="chat-contact"><strong>TinkerSpend</strong><span><i /> Personal expense assistant</span></div>
+          <span className="chat-lock" aria-label="Private account">●</span>
         </div>
-      )}
-      {(rec.state === "recorded" || rec.state === "uploading") && (
-        <div className="row" aria-label="Recording">
-          <audio controls src={rec.url} />
-          <span className="muted">{(rec.durationMs / 1000).toFixed(1)}s</span>
-          <button disabled={rec.state === "uploading"} onClick={upload}>{rec.state === "uploading" ? "Transcribing…" : "Transcribe"}</button>
-          <button className="secondary" disabled={rec.state === "uploading"} onClick={cancelRec}>Discard recording</button>
+        <div className="chat-wall">
+          <div className="chat-day">THIS CONVERSATION</div>
+          <div className="chat-thread" aria-live="polite">
+            {turns.map((turn) => <div className={`chat-message ${turn.from}`} key={turn.id}><p>{turn.text}</p><small className="chat-time">{turn.from === "person" ? "You · " : "TinkerSpend · "}now</small></div>)}
+          </div>
+          {drafts.length === 0 && turns.length === 1 && <div className="chat-suggestions" aria-label="Try a message">
+            <span>TRY A MESSAGE</span>
+            <button type="button" className="chat-chip" onClick={() => setText("Yesterday I spent ₹540 on groceries at Reliance Fresh")}>Groceries yesterday</button>
+            <button type="button" className="chat-chip" onClick={() => setText("Paid ₹180 for coffee and snacks")}>Coffee and snacks</button>
+          </div>}
+          {photo && <div className="chat-attachment" aria-label="Receipt photo preview"><img src={photo.url} alt="Receipt to read" className="receipt-thumb" /><div><strong>Receipt photo ready</strong><span>Review its details before saving.</span></div><button type="button" disabled={photo.busy} onClick={readReceipt}>{photo.busy ? "Reading…" : "Read receipt"}</button><button type="button" className="secondary" disabled={photo.busy} onClick={() => { URL.revokeObjectURL(photo.url); setPhoto(null); }}>Remove</button></div>}
+          {rec.state === "recording" && <div className="chat-recording" role="status"><span className="recording-dot" /> Recording · {Math.floor(elapsed / 1000)}s / 60s <button type="button" onClick={() => void stopRec(rec.startedAt)}>Stop</button><button type="button" className="secondary" onClick={() => void cancelRec()}>Cancel</button></div>}
+          {(rec.state === "recorded" || rec.state === "uploading") && <div className="chat-recording" aria-label="Voice note preview"><audio controls src={rec.url} /><span className="muted">{(rec.durationMs / 1000).toFixed(1)}s</span><button type="button" disabled={rec.state === "uploading"} onClick={upload}>{rec.state === "uploading" ? "Transcribing…" : "Send voice note"}</button><button type="button" className="secondary" disabled={rec.state === "uploading"} onClick={() => void cancelRec()}>Remove</button></div>}
         </div>
-      )}
-      {err && <p role="alert" className="error">{err}</p>}
-      {info && <p className="muted" role="status">{info}</p>}
-      {drafts.length > 0 && <h3>Drafts — nothing is saved until you press Save</h3>}
-      {drafts.map((d) => <DraftCard key={`${d.id}-${d.version}`} d={d} onChanged={load} onSaved={(t) => { onSaved(t); void load(); }} onReextract={(t) => extractText(t, d.reference_at).then(() => api("POST", `/drafts/${d.id}/discard`)).then(load)} />)}
+        <form className="chat-compose" onSubmit={(e) => { e.preventDefault(); if (text.trim() && !busy) void extractText(text.trim(), Date.now()); }}>
+          <label className="sr-only" htmlFor="expense-message">Describe an expense</label>
+          <textarea id="expense-message" rows={1} maxLength={4000} value={text} onChange={(e) => setText(e.target.value)} placeholder="Message TinkerSpend… e.g. ₹450 dinner with friends" />
+          <div className="chat-tools">
+            {rec.state === "idle" && <button type="button" className="chat-tool record-tool" aria-label="Record a voice note" title="Record a voice note" onClick={() => void startRec()}><svg viewBox="0 0 24 24" width="20" height="20" fill="none" aria-hidden="true"><rect x="9" y="3" width="6" height="12" rx="3" stroke="currentColor" strokeWidth="1.8"/><path d="M6 11a6 6 0 0 0 12 0M12 17v4m-4 0h8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg></button>}
+            <label className="chat-tool chat-upload" aria-label="Attach a receipt photo" title="Attach a receipt photo"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" aria-hidden="true"><rect x="3" y="5" width="18" height="15" rx="3" stroke="currentColor" strokeWidth="1.8"/><circle cx="8.5" cy="10" r="1.5" fill="currentColor"/><path d="m5 18 5-5 3 3 2-2 4 4" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"/></svg><input hidden type="file" accept="image/jpeg,image/png" capture="environment" onChange={(e) => { void pickPhoto(e.target.files?.[0]); e.target.value = ""; }} /></label>
+            <button type="submit" className="chat-send" aria-label="Send message" disabled={busy || !text.trim()}>{busy ? "…" : "↑"}</button>
+          </div>
+        </form>
+      </div>
+      {err && <p role="alert" className="error assistant-error">{err}</p>}
+      {info && <p className="muted assistant-info" role="status">{info}</p>}
+      <p className="assistant-disclaimer">OpenAI extraction runs only when enabled for your account and the private API key is configured on the server. Otherwise TinkerSpend uses its built-in parser. Nothing reaches your ledger until you review and save a draft.</p>
+      {drafts.length > 0 && <div className="assistant-drafts"><h3>Your drafts <span>Review before saving</span></h3>{drafts.map((d) => <DraftCard key={`${d.id}-${d.version}`} d={d} onChanged={load} onSaved={(t) => { onSaved(t); void load(); }} onReextract={(t) => extractText(t, d.reference_at).then(() => api("POST", `/drafts/${d.id}/discard`)).then(load)} />)}</div>}
     </section>
   );
 }

@@ -1,10 +1,10 @@
 # Change log
 
-## 2026-10-25 — Dark interface and motion polish
+## 2026-10-25 — Dark assistant interface and motion polish
 
-- Changed: replaced the pale presentation palette with a layered charcoal and deep-green theme, added a clearer branded header and section navigation, improved table/form contrast, and added short screen/card transitions with hover feedback.
-- Accessibility: transitions respect `prefers-reduced-motion`; controls retain visible keyboard focus and touch-friendly sizing. No remote assets, dependencies, tracking or transaction behavior were added.
-- Validation: lint, full typecheck, production web build and 68 domain tests pass. Playwright could not launch its bundled Chromium (`spawn UNKNOWN`); a retry using system Chrome stalled before reporting test results, so browser behavior remains unverified in this session.
+- Changed: replaced the pale palette with charcoal and deep-green surfaces, added branded navigation and accessible motion, and reshaped existing text, receipt and voice draft intake as a conversational assistant. The dark chat takes visual cues from the supplied WhatsApp references through muted doodle wallpaper and contrasting bubbles while retaining TinkerSpend branding. The chat uses the same authenticated draft APIs and review-before-save workflow; suggested prompts only fill the composer, so the user chooses when to send a request. Added an explicit Account setting for AI processing with an OpenAI data and credit disclosure.
+- Accessibility and cost: reduced-motion and keyboard focus states are respected. AI extraction follows the account setting, quota and private Worker key; deterministic text parsing remains available when AI is off or unavailable. No model, prompt, dependency, remote asset or tracking changes were added.
+- Validation: lint, full typecheck, production web build, 68 domain tests and 48 API tests pass. Playwright could not launch its bundled Chromium (`spawn UNKNOWN`); retries using system browsers stalled before results, so browser behavior remains unverified in this session.
 
 ## 2026-10-25 — Demo presentation surface
 

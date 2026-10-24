@@ -10,6 +10,9 @@ interface WhatsAppStatus { linked: boolean; linked_at: number | null }
 export function Settings({ me, onSignedOut }: { me: Me; onSignedOut: () => void }) {
   const [devices, setDevices] = useState<Device[]>([]);
   const [msg, setMsg] = useState<string | null>(null);
+  const [settingError, setSettingError] = useState<string | null>(null);
+  const [aiEnabled, setAiEnabled] = useState(!!me.ai_enabled);
+  const [aiBusy, setAiBusy] = useState(false);
   const [whatsApp, setWhatsApp] = useState<WhatsAppStatus | null>(null);
   const [linkCode, setLinkCode] = useState<{ code: string; expires_at: number } | null>(null);
   const load = () => api<{ items: Device[] }>("GET", "/devices").then((r) => setDevices(r.items), () => {});
@@ -46,10 +49,25 @@ export function Settings({ me, onSignedOut }: { me: Me; onSignedOut: () => void 
     setLinkCode(result); setMsg("Send the displayed LINK message to your configured TinkerSpend WhatsApp number within 10 minutes.");
   }
 
+  async function setAiProcessing(enabled: boolean) {
+    setAiBusy(true); setSettingError(null); setMsg(null);
+    try {
+      await api("PATCH", "/settings", { ai_processing: enabled });
+      setAiEnabled(enabled);
+      setMsg(enabled ? "AI processing enabled. OpenAI requests use your configured API credits and daily limits." : "AI processing disabled. Typed expenses use the built-in parser; voice and receipt AI processing are paused.");
+    } catch (e) { setSettingError((e as Error).message); }
+    finally { setAiBusy(false); }
+  }
+
   return (
     <section className="card" aria-labelledby="set-h">
       <h2 id="set-h">Account</h2>
       <p>Signed in as <strong>{me.email}</strong> · Time zone {me.timezone}</p>
+      <div className="setting-switch-row">
+        <div><strong>AI expense processing</strong><p className="muted">When on, expense text, voice recordings and receipt photos may be sent to OpenAI through TinkerSpend’s server. API credits and daily limits apply. Turn it off any time.</p></div>
+        <label className="switch-control"><span className="sr-only">Enable AI expense processing</span><input type="checkbox" role="switch" aria-label="Enable AI expense processing" checked={aiEnabled} disabled={aiBusy} onChange={(e) => void setAiProcessing(e.target.checked)} /><span aria-hidden="true" /></label>
+      </div>
+      {settingError && <p role="alert" className="error">{settingError}</p>}
       <div className="row"><button className="secondary" onClick={exportCsv}>Export CSV</button><button className="secondary" onClick={logout}>Sign out</button></div>
       <h3>Android devices</h3>
       {devices.length === 0 ? <p className="muted">No Android devices registered.</p> : (
