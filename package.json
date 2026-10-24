@@ -1,0 +1,35 @@
+{
+  "name": "tinkerspend",
+  "private": true,
+  "packageManager": "pnpm@10.18.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "setup": "bash scripts/setup.sh",
+    "lint": "eslint .",
+    "typecheck": "pnpm -r --parallel run typecheck",
+    "test": "vitest run --project domain",
+    "test:api": "pnpm --filter @tinkerspend/api run test",
+    "test:e2e": "playwright test",
+    "build:web": "pnpm --filter @tinkerspend/client run build",
+    "android:sync": "pnpm --filter @tinkerspend/client run build:native && pnpm --filter @tinkerspend/client exec cap sync android",
+    "android:test": "bash scripts/android.sh test",
+    "android:debug": "bash scripts/android.sh debug",
+    "android:release": "bash scripts/android.sh release",
+    "db:migrate:local": "pnpm --filter @tinkerspend/api exec wrangler d1 migrations apply DB --local",
+    "db:migrate:remote": "bash scripts/migrate-remote.sh",
+    "deploy:staging": "bash scripts/deploy.sh staging",
+    "deploy:production": "bash scripts/deploy.sh production",
+    "release:check": "bash scripts/release-check.sh"
+  },
+  "devDependencies": {
+    "@eslint/js": "9.39.1",
+    "@playwright/test": "1.64.1",
+    "eslint": "9.39.1",
+    "typescript": "5.9.3",
+    "typescript-eslint": "8.72.0",
+    "vitest": "4.1.12"
+  },
+  "type": "module"
+}
