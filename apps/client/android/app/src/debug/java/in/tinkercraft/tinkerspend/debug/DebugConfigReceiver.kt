@@ -6,6 +6,8 @@ import android.content.Intent
 import android.util.Log
 import `in`.tinkercraft.tinkerspend.capture.OutboxDb
 import `in`.tinkercraft.tinkerspend.capture.Prefs
+import `in`.tinkercraft.tinkerspend.capture.Crypto
+import `in`.tinkercraft.tinkerspend.capture.SyncScheduler
 
 /** adb shell am broadcast -a in.tinkercraft.tinkerspend.DEBUG_CONFIG -p in.tinkercraft.tinkerspend --es owner test-owner --es packages in.tinkercraft.tinkerspend.fixture --ez enabled true */
 class DebugConfigReceiver : BroadcastReceiver() {
@@ -14,9 +16,12 @@ class DebugConfigReceiver : BroadcastReceiver() {
         intent.getStringExtra("owner")?.let { p.boundUserId = it }
         intent.getStringExtra("packages")?.let { p.selectedPackages = it.split(',').filter { s -> s.isNotBlank() }.toSet() }
         if (intent.hasExtra("enabled")) p.captureEnabled = intent.getBooleanExtra("enabled", false)
+        // Debug-only: inject a session minted by a local test backend (emulator sync tests without Google).
+        intent.getStringExtra("token")?.let { p.sessionCipher = Crypto.encryptString(it); p.sessionExpiresAt = System.currentTimeMillis() + 86_400_000; p.authPaused = false }
+        if (intent.getBooleanExtra("sync", false)) SyncScheduler.schedule(ctx, userInitiated = true)
         val pending = Thread { 
             val dao = OutboxDb.get(ctx).dao()
-            Log.i("TSDebug", "state owner=${p.boundUserId} enabled=${p.captureEnabled} selected=${p.selectedPackages} listener=${p.listenerConnected} pending=${dao.pendingCount()} failed=${dao.failedCount()} lastEventAt=${p.lastEventAt}")
+            Log.i("TSDebug", "state install=${p.installId} authPaused=${p.authPaused} lastSyncAt=${p.lastSyncAt} owner=${p.boundUserId} enabled=${p.captureEnabled} selected=${p.selectedPackages} listener=${p.listenerConnected} pending=${dao.pendingCount()} failed=${dao.failedCount()} lastEventAt=${p.lastEventAt}")
         }
         pending.start(); pending.join()
     }

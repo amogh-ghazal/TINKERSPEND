@@ -27,3 +27,15 @@ describe("person-name heuristic", () => {
     expect(looksLikePersonName("Swiggy Limited")).toBe(false);
   });
 });
+
+describe("counterparty extraction stops at status words", () => {
+  it.each([
+    ["Payment of Rs.700 to Metro Mart is pending. UPI Ref No 512345678902", "Metro Mart"],
+    ["Rs.700 paid to Metro Mart successful. UPI Ref No 512345678902", "Metro Mart"],
+    ["Payment of Rs.249 to Sri Balaji Stores failed. UPI Ref No 512345678904", "Sri Balaji Stores"],
+  ])("%s", (text, expected) => {
+    const r = parsePaymentNotification({ title: "UPI", text });
+    expect(r.type).toBe("payment");
+    if (r.type === "payment") expect(r.counterparty).toBe(expected);
+  });
+});

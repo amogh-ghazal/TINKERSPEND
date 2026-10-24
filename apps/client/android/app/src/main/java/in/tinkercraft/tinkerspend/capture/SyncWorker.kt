@@ -12,13 +12,13 @@ import kotlin.random.Random
 
 object SyncScheduler {
     private const val NAME = "tinkerspend-sync"
-    fun schedule(ctx: Context, delaySec: Long = 0) {
+    fun schedule(ctx: Context, delaySec: Long = 0, userInitiated: Boolean = false) {
         val req = OneTimeWorkRequestBuilder<SyncWorker>()
             .setConstraints(Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build())
             .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 30, TimeUnit.SECONDS)
             .apply { if (delaySec > 0) setInitialDelay(delaySec, TimeUnit.SECONDS) }
             .build()
-        WorkManager.getInstance(ctx).enqueueUniqueWork(NAME, ExistingWorkPolicy.APPEND_OR_REPLACE, req)
+        WorkManager.getInstance(ctx).enqueueUniqueWork(NAME, if (userInitiated) ExistingWorkPolicy.REPLACE else ExistingWorkPolicy.APPEND_OR_REPLACE, req)
     }
     fun cancel(ctx: Context) = WorkManager.getInstance(ctx).cancelUniqueWork(NAME)
 }

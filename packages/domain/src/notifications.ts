@@ -69,11 +69,11 @@ const REF_PATTERNS: Array<{ ns: string; re: RegExp }> = [
 function extractCounterparty(t: string, direction: "debit" | "credit" | "unknown"): string | null {
   const patterns =
     direction === "credit"
-      ? [/\bfrom\s+([A-Za-z0-9&.' -]{2,40}?)(?=\s+(?:on|via|to|for|ref|upi|using)\b|[.,\n]|$)/i]
+      ? [/\bfrom\s+([A-Za-z0-9&.' -]{2,40}?)(?=\s+(?:on|via|to|for|ref|upi|using|is|was|has|successful|pending|failed|completed)\b|[.,\n]|$)/i]
       : [
-          /\b(?:paid|sent|transferred)\s+(?:₹\s*[\d,.]+|rs\.?\s*[\d,.]+)?\s*to\s+([A-Za-z0-9&.' -]{2,40}?)(?=\s+(?:on|via|from|for|ref|upi|using)\b|[.,\n]|$)/i,
-          /\bto\s+([A-Za-z0-9&.' -]{2,40}?)(?=\s+(?:on|via|from|for|ref|upi|using)\b|[.,\n]|$)/i,
-          /\bat\s+([A-Za-z0-9&.' -]{2,40}?)(?=\s+(?:on|via|from|for|ref|upi|using)\b|[.,\n]|$)/i,
+          /\b(?:paid|sent|transferred)\s+(?:₹\s*[\d,.]+|rs\.?\s*[\d,.]+)?\s*to\s+([A-Za-z0-9&.' -]{2,40}?)(?=\s+(?:on|via|from|for|ref|upi|using|is|was|has|successful|pending|failed|completed)\b|[.,\n]|$)/i,
+          /\bto\s+([A-Za-z0-9&.' -]{2,40}?)(?=\s+(?:on|via|from|for|ref|upi|using|is|was|has|successful|pending|failed|completed)\b|[.,\n]|$)/i,
+          /\bat\s+([A-Za-z0-9&.' -]{2,40}?)(?=\s+(?:on|via|from|for|ref|upi|using|is|was|has|successful|pending|failed|completed)\b|[.,\n]|$)/i,
         ];
   for (const re of patterns) {
     const m = re.exec(t);

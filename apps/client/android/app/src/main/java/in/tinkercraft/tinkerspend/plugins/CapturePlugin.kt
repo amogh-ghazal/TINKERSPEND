@@ -79,7 +79,7 @@ class CapturePlugin : Plugin() {
         call.resolve(JSObject().put("events", out))
     }
 
-    @PluginMethod fun syncNow(call: PluginCall) { Prefs(context).authPaused = false; SyncScheduler.schedule(context); call.resolve() }
+    @PluginMethod fun syncNow(call: PluginCall) { Prefs(context).authPaused = false; SyncScheduler.schedule(context, userInitiated = true); call.resolve() }
 
     /** Offers currently visible notifications only — not historical transactions. */
     @PluginMethod fun importActiveNotifications(call: PluginCall) = io.execute {
