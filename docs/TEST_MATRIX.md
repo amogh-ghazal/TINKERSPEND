@@ -7,3 +7,7 @@
 | Domain | 31 Oct 23:59 IST vs 1 Nov 00:01 IST | different months | pass | vitest | 2026-10-24 |
 | Parser | 15 SYNTHETIC notification fixtures | as labelled | pass (synthetic only) | vitest | 2026-10-24 |
 | Android | Real device capture | event captured with UI closed | not tested (no device yet) | — | — |
+| Android (emulator) | Listener bound via notification access; app UI never opened (MainActivity count 0); SYNTHETIC fixture app posts: success ×2 same notification, OTP, promo, distinct second payment | 2 captured (repeat callback collapsed), OTP/promo filtered locally | pass: pending=2, failed=0 — `docs/evidence/m0-emulator-listener-logcat.txt` | Android 16 emulator (API 36 google_apis x86_64), debug APK | 2026-10-24 |
+| API (workerd/Miniflare D1, local) | Auth: allowlist, single-use challenge, nonce, audience, unverified email, logout, device revoke, CSRF, bearer-vs-web | reject/accept as specified | pass (11/11 tests) | vitest-pool-workers 0.23, workerd 2026-08-22 | 2026-10-24 |
+| API (local) | Ledger fixture through HTTP+D1; isolation A/B; idempotent create; version conflict; partial refund bound; reversal guard; cross-month refund; bad money; 413; CSV formula | as §19 | pass | same | 2026-10-24 |
+| API (local) | Notification ingest: replay, repost, distinct same-value, OTP, batch>5, device mismatch, cross-user, pending→success, stale pending, web upload refused | as specified | pass | same | 2026-10-24 |

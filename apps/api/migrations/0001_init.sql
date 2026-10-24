@@ -55,7 +55,10 @@ CREATE TABLE transactions (
   merchant TEXT,
   counterparty TEXT,
   note TEXT,
+  direction TEXT NOT NULL DEFAULT 'outgoing' CHECK (direction IN ('outgoing','incoming','unknown')),
   source TEXT NOT NULL CHECK (source IN ('manual','notification','voice','receipt','text')),
+  provenance TEXT NOT NULL DEFAULT 'manual' CHECK (provenance IN ('manual','self_reported','notification','receipt','ai_suggested')),
+  operation_id TEXT,
   original_txn_id TEXT REFERENCES transactions(id),
   merged_into_id TEXT REFERENCES transactions(id),
   user_edited_fields TEXT NOT NULL DEFAULT '[]',
@@ -66,6 +69,7 @@ CREATE TABLE transactions (
 );
 CREATE INDEX txn_user_date ON transactions(user_id, occurred_on);
 CREATE INDEX txn_user_review ON transactions(user_id, review_state);
+CREATE UNIQUE INDEX txn_user_op ON transactions(user_id, operation_id) WHERE operation_id IS NOT NULL;
 
 CREATE TABLE allocations (
   id TEXT PRIMARY KEY,

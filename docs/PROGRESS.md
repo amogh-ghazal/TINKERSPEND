@@ -8,8 +8,9 @@ _Status legend: **implemented** (code exists), **tested** (automated/manual evid
 |---|---|---|
 | Repo scaffold (pnpm monorepo, domain/contracts/api/client) | implemented | this branch |
 | Domain money/date/accounting/parser unit tests | tested (fixtures, synthetic) | `pnpm test` |
-| Android Capacitor project + Kotlin listener/outbox | implemented, building | — |
-| Emulator listener test with synthetic fixture app | not tested yet | — |
+| Android debug APK (listener, Room outbox, WorkManager, Capture/AuthBridge/Recorder plugins) | implemented, builds | `pnpm android:debug` |
+| Emulator listener test with synthetic fixture app (UI closed) | tested on emulator only (synthetic) | docs/evidence/m0-emulator-listener-logcat.txt |
+| Worker API + D1 schema, local integration tests | tested locally (11/11) | `pnpm test:api` |
 | Real-device capture on owner's payment app | **pending owner device** | — |
 | Cloudflare Worker + D1 Free deploy & CPU measurement | **pending CLOUDFLARE_API_TOKEN / ACCOUNT_ID** | — |
 | OpenAI model verification | **pending OPENAI_API_KEY** | — |
