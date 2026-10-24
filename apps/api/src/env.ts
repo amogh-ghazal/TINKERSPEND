@@ -14,6 +14,7 @@ export interface Env {
   AI_USER_RECEIPT_LIMIT?: string;
   AI_DAILY_GLOBAL_LIMIT: string;
   SESSION_DAYS: string;
+  AUTH_CHALLENGE_DAILY_LIMIT?: string;
   /** Test-only: replaces Google JWKS verification. Never set in deployed environments. */
   TEST_ID_TOKEN_VERIFIER?: string;
 }

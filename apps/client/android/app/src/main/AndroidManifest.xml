@@ -64,6 +64,5 @@
         <package android:name="com.sbi.lotusintouch" />
         <package android:name="com.axis.mobile" />
         <package android:name="com.msf.kbank.mobile" />
-        <package android:name="in.tinkercraft.tinkerspend.fixture" />
     </queries>
 </manifest>

@@ -16,6 +16,7 @@ class PostActivity : Activity() {
         if (android.os.Build.VERSION.SDK_INT >= 33) requestPermissions(arrayOf("android.permission.POST_NOTIFICATIONS"), 1)
         val nm = getSystemService(NotificationManager::class.java)
         nm.createNotificationChannel(NotificationChannel("pay", "Synthetic payments", NotificationManager.IMPORTANCE_DEFAULT))
+        if (intent.getBooleanExtra("clear", false)) { nm.cancelAll(); finish(); return }
         val title = intent.getStringExtra("title")
         val text = intent.getStringExtra("text")
         if (title != null || text != null) {

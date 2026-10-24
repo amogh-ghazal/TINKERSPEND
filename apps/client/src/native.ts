@@ -9,6 +9,7 @@ export interface CaptureStatus {
   pendingCount: number;
   failedCount: number;
   captureEnabled: boolean;
+  automaticSources: boolean;
   boundUser: string | null;
   selectedPackages: string[];
   outboxBytes: number;
@@ -30,6 +31,7 @@ export interface CapturePlugin {
   getStatus(): Promise<CaptureStatus>;
   openNotificationAccessSettings(): Promise<void>;
   setCaptureEnabled(o: { enabled: boolean }): Promise<CaptureStatus>;
+  enableAutomaticCapture(): Promise<CaptureStatus>;
   setSelectedPackages(o: { packages: string[] }): Promise<CaptureStatus>;
   listSupportedSources(): Promise<{ sources: InstalledSource[] }>;
   recentEvents(o: { limit: number }): Promise<{ events: CapturedEventSummary[] }>;

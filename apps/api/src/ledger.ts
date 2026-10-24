@@ -29,6 +29,8 @@ export interface TxnRow {
   id: string; kind: string; payment_status: string; review_state: string; amount_paise: number; occurred_on: string; direction: string;
   counterparty: string | null; note: string | null; source: string; provenance: string; original_txn_id: string | null; merged_into_id: string | null;
   user_edited_fields: string; version: number; created_at: number; updated_at: number;
+  notification_posted_at?: number | null; reported_bank?: string | null;
+  capture_warnings?: string;
 }
 
 export async function loadTxn(db: D1Database, userId: string, id: string): Promise<TxnRow> {
@@ -78,6 +80,8 @@ export function present(t: TxnRow, allocs: Alloc[], suggestion?: SuggestionRow |
     merged_into_id: t.merged_into_id, user_edited_fields: JSON.parse(t.user_edited_fields) as string[], version: t.version,
     allocations: allocs.map((a) => ({ category_id: a.category, amount_paise: a.amountPaise })), created_at: t.created_at, updated_at: t.updated_at,
     receipt_draft_id: receiptDraftId ?? null,
+    notification_posted_at: t.notification_posted_at ?? null, reported_bank: t.reported_bank ?? null,
+    capture_warnings: JSON.parse(t.capture_warnings ?? "[]") as string[],
     suggestion: t.review_state === "needs_review" && suggestion ? { category_id: suggestion.category, kind: suggestion.kind, reason: suggestion.reason, model: suggestion.model } : null,
   };
 }
@@ -86,15 +90,17 @@ export interface InsertTxn {
   userId: string; kind: string; paymentStatus: string; reviewState: string; amountPaise: number; date: string; direction: string;
   counterparty: string | null; note: string | null; source: string; provenance: string; operationId: string | null; originalTxnId?: string | null;
   allocations: Alloc[]; categorySource?: string;
+  notificationPostedAt?: number | null; reportedBank?: string | null;
+  captureWarnings?: string[];
 }
 
 /** Returns statements so callers can batch atomically with other writes. */
 export function insertTxnStatements(db: D1Database, id: string, t: InsertTxn): D1PreparedStatement[] {
   const ts = now();
   const stmts = [db.prepare(
-    `INSERT INTO transactions (id, user_id, kind, payment_status, review_state, amount_paise, occurred_on, direction, counterparty, note, source, provenance, operation_id, original_txn_id, created_at, updated_at)
-     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
-  ).bind(id, t.userId, t.kind, t.paymentStatus, t.reviewState, t.amountPaise, t.date, t.direction, t.counterparty, t.note, t.source, t.provenance, t.operationId, t.originalTxnId ?? null, ts, ts)];
+    `INSERT INTO transactions (id, user_id, kind, payment_status, review_state, amount_paise, occurred_on, direction, counterparty, note, source, provenance, operation_id, original_txn_id, created_at, updated_at, notification_posted_at, reported_bank, capture_warnings)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+  ).bind(id, t.userId, t.kind, t.paymentStatus, t.reviewState, t.amountPaise, t.date, t.direction, t.counterparty, t.note, t.source, t.provenance, t.operationId, t.originalTxnId ?? null, ts, ts, t.notificationPostedAt ?? null, t.reportedBank ?? null, JSON.stringify(t.captureWarnings ?? []))];
   for (const a of t.allocations) {
     stmts.push(db.prepare("INSERT INTO allocations (id, user_id, transaction_id, category, amount_paise, category_source) VALUES (?,?,?,?,?,?)")
       .bind(uuid(), t.userId, id, a.category, a.amountPaise, t.categorySource ?? "user"));
@@ -189,6 +195,10 @@ ledger.patch("/transactions/:id", async (c) => {
   if (kind === "refund" && !t.original_txn_id) throw new ApiError(422, "validation_failed", "Refunds must be linked via the refund endpoint");
   const sets: string[] = ["version = version + 1", "updated_at = ?"];
   const args: unknown[] = [now()];
+  const editToken = uuid();
+  sets.push("edit_token = ?"); args.push(editToken);
+  const editGuard = "EXISTS (SELECT 1 FROM transactions WHERE id = ? AND user_id = ? AND edit_token = ?)";
+  const guardArgs = [t.id, u.id, editToken];
   const field = (col: string, name: string, v: unknown) => { sets.push(`${col} = ?`); args.push(v); edited.add(name); };
   if (b.amount !== undefined) field("amount_paise", "amount", amount);
   if (b.kind) { field("kind", "kind", b.kind); field("direction", "direction", b.kind === "income" ? "incoming" : b.kind === "unknown" ? "unknown" : "outgoing"); }
@@ -199,6 +209,7 @@ ledger.patch("/transactions/:id", async (c) => {
   let review = b.review_state;
   if (!review && b.kind && b.kind !== "unknown" && t.review_state === "needs_review") review = "confirmed";
   if (review) field("review_state", "review_state", review);
+  if (b.category_id || b.allocations) edited.add("category");
   sets.push("user_edited_fields = ?"); args.push(JSON.stringify([...edited]));
   const stmts: D1PreparedStatement[] = [
     c.env.DB.prepare(`UPDATE transactions SET ${sets.join(", ")} WHERE id = ? AND user_id = ? AND version = ?`).bind(...args, t.id, u.id, b.version),
@@ -212,14 +223,13 @@ ledger.patch("/transactions/:id", async (c) => {
       if (cur.length <= 1) allocs = [{ category: cur[0]?.category ?? "uncategorized", amountPaise: amount }];
       else { const split = allocateProportionally(amount, cur.map((a) => a.amountPaise)); allocs = cur.map((a, i) => ({ category: a.category, amountPaise: split[i]! })); }
     }
-    stmts.push(c.env.DB.prepare("DELETE FROM allocations WHERE transaction_id = ? AND user_id = ?").bind(t.id, u.id));
-    for (const a of allocs) stmts.push(c.env.DB.prepare("INSERT INTO allocations (id, user_id, transaction_id, category, amount_paise, category_source) VALUES (?,?,?,?,?,'user')").bind(uuid(), u.id, t.id, a.category, a.amountPaise));
-    if (b.category_id) edited.add("category");
+    stmts.push(c.env.DB.prepare(`DELETE FROM allocations WHERE transaction_id = ? AND user_id = ? AND ${editGuard}`).bind(t.id, u.id, ...guardArgs));
+    for (const a of allocs) stmts.push(c.env.DB.prepare(`INSERT INTO allocations (id, user_id, transaction_id, category, amount_paise, category_source) SELECT ?,?,?,?,?,'user' WHERE ${editGuard}`).bind(uuid(), u.id, t.id, a.category, a.amountPaise, ...guardArgs));
   }
-  if (review || b.category_id) stmts.push(c.env.DB.prepare("DELETE FROM txn_suggestions WHERE user_id = ? AND transaction_id = ?").bind(u.id, t.id));
+  if (review || b.category_id) stmts.push(c.env.DB.prepare(`DELETE FROM txn_suggestions WHERE user_id = ? AND transaction_id = ? AND ${editGuard}`).bind(u.id, t.id, ...guardArgs));
   if (b.apply_rule && b.category_id && (b.counterparty ?? t.counterparty)) {
-    stmts.push(c.env.DB.prepare("INSERT INTO category_rules (id, user_id, match_type, pattern, category, kind, created_at) VALUES (?,?,'counterparty_exact',?,?,?,?) ON CONFLICT(user_id, match_type, pattern) DO UPDATE SET category = excluded.category, kind = excluded.kind")
-      .bind(uuid(), u.id, normalizeMerchant((b.counterparty ?? t.counterparty)!), b.category_id, kind, now()));
+    stmts.push(c.env.DB.prepare(`INSERT INTO category_rules (id, user_id, match_type, pattern, category, kind, created_at) SELECT ?,?,'counterparty_exact',?,?,?,? WHERE ${editGuard} ON CONFLICT(user_id, match_type, pattern) DO UPDATE SET category = excluded.category, kind = excluded.kind`)
+      .bind(uuid(), u.id, normalizeMerchant((b.counterparty ?? t.counterparty)!), b.category_id, kind, now(), ...guardArgs));
   }
   const res = await c.env.DB.batch(stmts);
   if ((res[0]?.meta.changes ?? 0) === 0) throw new ApiError(409, "version_conflict", "This transaction changed elsewhere; reload and retry");
@@ -288,13 +298,14 @@ ledger.get("/export.csv", async (c) => {
   const rs = await c.env.DB.prepare("SELECT * FROM transactions WHERE user_id = ? AND deleted_at IS NULL ORDER BY occurred_on, id LIMIT 20000").bind(u.id).all<TxnRow>();
   const allocs = await allocationsFor(c.env.DB, u.id, []);
   void allocs;
-  const lines = [csvRow(["id", "date", "kind", "payment_status", "review_state", "amount_inr", "counterparty", "description", "source", "categories", "original_transaction_id", "merged_into_id"])];
+  const lines = [csvRow(["id", "date", "kind", "payment_status", "review_state", "amount_inr", "counterparty", "description", "source", "categories", "original_transaction_id", "merged_into_id", "notification_time_utc", "reported_bank"])];
   for (let i = 0; i < rs.results.length; i += 90) {
     const chunk = rs.results.slice(i, i + 90);
     const am = await allocationsFor(c.env.DB, u.id, chunk.map((r) => r.id));
     for (const r of chunk) {
       lines.push(csvRow([r.id, r.occurred_on, r.kind, r.payment_status, r.review_state, paiseToDecimalString(r.amount_paise), r.counterparty, r.note, r.source,
-        (am.get(r.id) ?? []).map((a) => `${a.category}:${paiseToDecimalString(a.amountPaise)}`).join(";"), r.original_txn_id, r.merged_into_id]));
+        (am.get(r.id) ?? []).map((a) => `${a.category}:${paiseToDecimalString(a.amountPaise)}`).join(";"), r.original_txn_id, r.merged_into_id,
+        r.notification_posted_at ? new Date(r.notification_posted_at).toISOString() : null, r.reported_bank ?? null]));
     }
   }
   return new Response(lines.join("\r\n") + "\r\n", { headers: { "content-type": "text/csv; charset=utf-8", "content-disposition": "attachment; filename=tinkerspend-export.csv", "cache-control": "no-store" } });

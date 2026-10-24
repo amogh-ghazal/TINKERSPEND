@@ -2,6 +2,8 @@
 
 The owner authorized continuing development in Codex on 24 October 2026. That supersedes the historical Devin-only workflow in `docs/EXECUTION_SPEC.md`; its product, privacy, accounting and free-infrastructure constraints remain applicable.
 
+On 25 October the owner replaced per-app source selection with one disclosed, account-bound automatic capture opt-in plus Android notification access. Preserve local source/sender filtering, no SMS inbox permission, uncertainty/review and current-visible/new-alert capture. See `docs/NOTIFICATION_CAPTURE.md`. Defer visual redesign until the owner gives UI direction.
+
 - Preserve existing work and inspect Git status before editing.
 - Use simple, idiomatic code and the repository's existing patterns. Validate inputs and show errors rather than fabricated success.
 - Update `CHANGELOG.md`, `AI_USAGE.md`, `docs/PROGRESS.md` and relevant setup/demo documentation for meaningful changes.

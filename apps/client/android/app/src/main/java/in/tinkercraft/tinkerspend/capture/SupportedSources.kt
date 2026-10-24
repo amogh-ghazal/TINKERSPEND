@@ -4,6 +4,13 @@ import `in`.tinkercraft.tinkerspend.BuildConfig
 
 /** Must match packages/domain KNOWN_SOURCES and the <queries> block in AndroidManifest.xml. */
 object SupportedSources {
+    val MESSAGING = setOf("com.google.android.apps.messaging", "com.samsung.android.messaging", "com.android.mms")
+    private val BANK_HEADERS = setOf("HDFCBK", "HDFCBN", "ICICIB", "SBIINB", "SBIPSG", "SBIUPI", "SBIBNK", "AXISBK", "KOTAKB", "FEDBNK", "CANBNK", "BOBTXN", "PNBSMS", "IDFCFB", "IDFCBK", "UNIONB", "INDUSB", "YESBNK")
+    fun bankMessageTitle(title: String?): Boolean {
+        val header = Regex("^(?:[A-Z]{2}-)?([A-Z]{6})(?:-[SPTG])?$").matchEntire(title?.trim()?.uppercase(java.util.Locale.ROOT) ?: "")?.groupValues?.get(1)
+        return header in BANK_HEADERS
+    }
+    fun eligible(pkg: String, title: String?): Boolean = pkg in all || (pkg in MESSAGING && bankMessageTitle(title))
     const val FIXTURE = "in.tinkercraft.tinkerspend.fixture"
     val PRODUCTION = linkedMapOf(
         "com.google.android.apps.nbu.paisa.user" to "Google Pay",

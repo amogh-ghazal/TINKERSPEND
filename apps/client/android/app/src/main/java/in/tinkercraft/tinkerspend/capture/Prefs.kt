@@ -19,6 +19,12 @@ class Prefs(context: Context) {
         get() = p.getStringSet("selected_packages", emptySet())!!.toSet()
         set(v) = p.edit().putStringSet("selected_packages", v).apply()
 
+    // Existing per-source users must explicitly accept the new broader automatic scope.
+    var automaticSources: Boolean
+        get() = automaticScopeConfigured && boundUserId != null && p.getString("automatic_owner", null) == boundUserId
+        set(v) = p.edit().putBoolean("automatic_sources", v).putString("automatic_owner", if (v) boundUserId else null).apply()
+    val automaticScopeConfigured: Boolean get() = p.getBoolean("automatic_sources", false)
+
     var boundUserId: String?
         get() = p.getString("bound_user", null)
         set(v) = p.edit().putString("bound_user", v).apply()

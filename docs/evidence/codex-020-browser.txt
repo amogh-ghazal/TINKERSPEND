@@ -1,0 +1,43 @@
+$ playwright test
+[WebServer] (node:8200) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] $ tsc -p tsconfig.json && vite build
+[WebServer] (node:42972) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:6088) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:33844) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:27848) [DEP0190] DeprecationWarning: Passing args to a child process with shell option true can lead to security vulnerabilities, as the arguments are not escaped, only concatenated.
+[WebServer] (Use `node --trace-deprecation ...` to show where the warning was created)
+[WebServer] (node:36008) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 20 tests using 1 worker
+
+(node:9428) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok  1 [desktop] › e2e\drafts.spec.ts:4:1 › typed statement → two editable drafts → explicit save with paid confirmation (1.3s)
+  ok  2 [desktop] › e2e\ledger.spec.ts:8:1 › baseline fixture via the UI: gross 560, refunds 50, net 510, review 250, pending 700 (2.2s)
+  ok  3 [desktop] › e2e\ledger.spec.ts:38:1 › isolation: a second allowlisted user sees none of the owner's data (497ms)
+  ok  4 [desktop] › e2e\ledger.spec.ts:50:1 › review, edit, delete and CSV export with formula neutralization (1.2s)
+  ok  5 [desktop] › e2e\ledger.spec.ts:76:1 › signed-out visitor sees sign-in and no data; API rejects without session (311ms)
+  ok  6 [desktop] › e2e\notification-purpose.spec.ts:4:1 › captured payment shows bank/time; purpose and duplicate confirmation preserve totals (1.3s)
+  ok  7 [desktop] › e2e\receipts.spec.ts:62:3 › receipt photo → correct → one ledger item with a local photo (2.3s)
+  ok  8 [desktop] › e2e\receipts.spec.ts:62:3 › receipt photo → total → one ledger item with a local photo (2.2s)
+  ok  9 [desktop] › e2e\receipts.spec.ts:62:3 › receipt photo → attach → one ledger item with a local photo (2.2s)
+  ok 10 [desktop] › e2e\security-headers.spec.ts:3:1 › Cloudflare static headers enforce script and frame boundaries (275ms)
+(node:9036) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 11 [mobile] › e2e\drafts.spec.ts:4:1 › typed statement → two editable drafts → explicit save with paid confirmation (1.3s)
+  ok 12 [mobile] › e2e\ledger.spec.ts:8:1 › baseline fixture via the UI: gross 560, refunds 50, net 510, review 250, pending 700 (2.0s)
+  ok 13 [mobile] › e2e\ledger.spec.ts:38:1 › isolation: a second allowlisted user sees none of the owner's data (491ms)
+  ok 14 [mobile] › e2e\ledger.spec.ts:50:1 › review, edit, delete and CSV export with formula neutralization (1.2s)
+  ok 15 [mobile] › e2e\ledger.spec.ts:76:1 › signed-out visitor sees sign-in and no data; API rejects without session (315ms)
+  ok 16 [mobile] › e2e\notification-purpose.spec.ts:4:1 › captured payment shows bank/time; purpose and duplicate confirmation preserve totals (1.2s)
+  ok 17 [mobile] › e2e\receipts.spec.ts:62:3 › receipt photo → correct → one ledger item with a local photo (2.4s)
+  ok 18 [mobile] › e2e\receipts.spec.ts:62:3 › receipt photo → total → one ledger item with a local photo (2.2s)
+  ok 19 [mobile] › e2e\receipts.spec.ts:62:3 › receipt photo → attach → one ledger item with a local photo (2.2s)
+  ok 20 [mobile] › e2e\security-headers.spec.ts:3:1 › Cloudflare static headers enforce script and frame boundaries (264ms)
+
+  20 passed (44.6s)

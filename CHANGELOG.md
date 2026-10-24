@@ -1,5 +1,14 @@
 # Change log
 
+## 2026-10-25T00:40:10.0305433+05:30 — Automatic capture and register reliability
+
+- Changed: replaced per-source onboarding with disclosed account-bound automatic capture; current-visible import on connect/resume; supported bank message notification filtering including grouped sender/owner-reply boundaries. No SMS inbox permission. Android version 0.2.0 / code 3.
+- Changed: persisted/displayed/exported alert time and reported bank; preserved bank conflicts/unknown values; added in-app purpose/category/remember controls and idle foreground refresh; refined own-account credit/reference/direction handling and possible-duplicate review.
+- Fixed: a deterministic simultaneous-edit test exposed rejected updates changing allocations/rules. Every side effect now shares a successful-edit marker; user category edits are correctly recorded. Conflicting/repeated alerts preserve user explanations and no longer restore a bank after a known conflict.
+- Security: native sessions require bearer auth; fake verifier cannot run in production; anonymous challenge writes are bounded; static CSP/headers; stricter Free-tier/config deployment guards and matched web OAuth config. Fixtures/debug receiver visibility remain debug-only.
+- Validation: 68 domain, 48 API (local D1/mocked OpenAI), 20 browser, 8 native instrumentation, 12 deployment guard cases; lint/typecheck pass; global/current/new/lifecycle/native-sync checks pass; debug/test/fixture/unsigned-release builds and bounded release static checks pass. See `docs/evidence/codex-020-automatic-capture.md` for actual evidence and recovered failures.
+- Limits: Cloudflare CLI is unauthenticated; account billing/live deployment, real Google/OpenAI, original release signing key and phone/public-install checks remain pending. Visual redesign deferred; no paid service, DNS change, merge or submission.
+
 ## 2026-10-24T23:40:20.4780257+05:30 — Virtual Android continuation
 
 - Changed: added six native instrumentation cases in total (three new capture/encrypted-storage tests alongside existing isolation/migration/package tests), guarded Windows emulator/capture/lifecycle/local-sync runners and virtual test instructions/evidence.

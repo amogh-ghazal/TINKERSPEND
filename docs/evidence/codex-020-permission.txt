@@ -1,0 +1,3 @@
+PASS: granting access imports an already-visible payment with no selected packages and no MainActivity.
+10-25 00:16:04.114  2125  2420 I TSDebug : state install=b4f59e7e-8487-4d65-8a79-f1365251e22f authPaused=false lastSyncAt=0 owner=synthetic-automatic-owner enabled=true selected=[] listener=true pending=2 failed=0 lastEventAt=1792867559665
+PASS: subsequent new notification captured and repeated callback collapsed. selected=[]; supported sources require no individual setup.

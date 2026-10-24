@@ -24,8 +24,8 @@ Invoke-Adb install -r "$repo/apps/client/android/app/build/outputs/apk/androidTe
 Invoke-Adb install -r "$repo/apps/client/android/fixture/build/outputs/apk/debug/fixture-debug.apk"
 $instrumentation = Invoke-Adb shell am instrument -w "$app.test/androidx.test.runner.AndroidJUnitRunner"
 $instrumentation
-if ($instrumentation -notmatch 'OK \(6 tests\)' -or $instrumentation -match 'FAILURES!!!|INSTRUMENTATION_FAILED') {
-    throw 'Expected all six native instrumentation tests to pass.'
+if ($instrumentation -notmatch 'OK \(8 tests\)' -or $instrumentation -match 'FAILURES!!!|INSTRUMENTATION_FAILED') {
+    throw 'Expected all eight native instrumentation tests to pass.'
 }
 Invoke-Adb shell am broadcast -a "$app.DEBUG_CONFIG" -p $app --es owner synthetic-emulator-owner --es packages $fixture --ez enabled true
 Invoke-Adb shell cmd notification allow_listener $listener

@@ -38,6 +38,14 @@ export const authRoutes = new Hono<AppVars>();
 
 authRoutes.post("/challenge", async (c) => {
   const body = await parseJson(c, ChallengeRequest, 2048);
+  // Bound unauthenticated writes on the Free tier. No IP address or identity is stored for this counter.
+  const day = new Date().toISOString().slice(0, 10);
+  const configured = Number(c.env.AUTH_CHALLENGE_DAILY_LIMIT ?? "1000");
+  const limit = Number.isSafeInteger(configured) && configured > 0 ? Math.min(configured, 1000) : 1000;
+  const slot = await c.env.DB.prepare(`INSERT INTO global_counters (day,metric,count) VALUES (?,'auth_challenge',1)
+    ON CONFLICT(day,metric) DO UPDATE SET count = count + 1 WHERE count < ? RETURNING count`).bind(day, limit).first();
+  if (!slot) throw new ApiError(429, "quota_exceeded", "Sign-in request limit reached; existing signed-in sessions still work", true,
+    Math.max(60, Math.ceil((Date.parse(day + "T00:00:00Z") + 86_400_000 - now()) / 1000)));
   const id = uuid();
   const nonce = randomToken(24);
   await c.env.DB.prepare("INSERT INTO auth_challenges (id, nonce_hash, client, install_id, expires_at) VALUES (?,?,?,?,?)")
@@ -107,6 +115,7 @@ export const requireAuth: MiddlewareHandler<AppVars> = async (c, next) => {
   if (!row || row.revoked_at || row.device_revoked || row.deleted_at || Number(row.expires_at) < now()) throw new ApiError(401, "unauthenticated", "Session expired or revoked");
   const client = row.client as "web" | "android";
   if (bearer && client !== "android") throw new ApiError(401, "unauthenticated", "Bearer tokens are for the Android app only");
+  if (!bearer && client === "android") throw new ApiError(401, "unauthenticated", "Android sessions require bearer authentication");
   if (!bearer && client === "web" && !SAFE.has(c.req.method)) {
     // Double-submit CSRF + Origin check for cookie-authenticated mutations.
     const header = c.req.header("x-csrf-token") ?? "";

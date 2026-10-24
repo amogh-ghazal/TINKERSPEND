@@ -7,6 +7,8 @@ export interface Txn {
   original_transaction_id: string | null; merged_into_id: string | null; user_edited_fields: string[]; version: number;
   allocations: { category_id: CategoryId; amount_paise: number }[]; created_at: number; updated_at: number;
   receipt_draft_id: string | null;
+  notification_posted_at?: number | null; reported_bank?: string | null;
+  capture_warnings?: string[];
   suggestion: { category_id: CategoryId; kind: "expense" | "transfer" | "unknown"; reason: string | null; model: string } | null;
 }
 export interface Me { id: string; email: string; timezone: string; ai_enabled?: boolean; client?: string }

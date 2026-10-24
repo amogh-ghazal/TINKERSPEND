@@ -21,7 +21,8 @@
     "db:migrate:remote": "bash scripts/migrate-remote.sh",
     "deploy:staging": "bash scripts/deploy.sh staging",
     "deploy:production": "bash scripts/deploy.sh production",
-    "release:check": "bash scripts/release-check.sh"
+    "release:check": "bash scripts/release-check.sh",
+    "test:deploy-safety": "node scripts/test-deploy-safety.mjs"
   },
   "devDependencies": {
     "@eslint/js": "9.39.1",

@@ -1,6 +1,8 @@
 # TinkerSpend
 
-Android expense tracker that captures payment notifications from apps you select, turns them into transactions, and reconciles them with manual, typed, voice and receipt entries so each payment is counted once. Monthly totals are in integer paise (INR), India time by default.
+Android expense tracker that automatically recognizes supported payment/bank notifications after one app-wide notification-access setup, turns them into transactions, and reconciles them with manual, typed, voice and receipt entries. Monthly totals are in integer paise (INR), India time by default.
+
+Capture includes currently visible and subsequent accessible alerts. Recognized bank alerts in supported messaging apps are filtered locally; there is no SMS-inbox permission. There are no per-app selection checkboxes. Clear merchant payments can be logged as expenses automatically; uncertain debits, unmatched refunds and possible duplicates stay in review. A nonblocking purpose question lets the user explain a payment and optionally remember its category. Alert time and an evidenced bank name appear in the register/CSV; missing or conflicting bank information remains unknown. See [capture behavior](docs/NOTIFICATION_CAPTURE.md).
 
 Status, evidence and what is still unverified: `docs/PROGRESS.md`, `docs/TEST_MATRIX.md`, `docs/evidence/`. Owner actions still needed: `docs/OWNER_ACTIONS.md`.
 
@@ -59,7 +61,7 @@ pnpm release:check path/to/app-release.apk   # signer, v2, no debuggable/clearte
 
 Windows equivalent after setting `JAVA_HOME` (JDK 21) and `ANDROID_HOME` (SDK): `pnpm android:sync`, then `cd apps/client/android` and `.\gradlew.bat :app:testDebugUnitTest :app:assembleDebug :app:assembleDebugAndroidTest :fixture:assembleDebug`. Set `TS_DEBUG_KEYSTORE` to the privately backed-up shared debug key when testing Google sign-in; a default local debug signer will have a different OAuth fingerprint. Signing keys/passwords must not be committed.
 
-For the dedicated synthetic Android emulator suite, see [virtual testing](docs/VIRTUAL_TESTING.md). Its PowerShell runner refuses other AVDs/phones, runs six native tests, and checks synthetic notification capture without launching the app UI. Actual run results and limits are in [virtual Android evidence](docs/evidence/codex-virtual-android.md).
+For the dedicated synthetic Android emulator suite, see [virtual testing](docs/VIRTUAL_TESTING.md). Guarded PowerShell runners refuse other AVDs/phones, run eight native tests, and check current/new automatic capture without launching the app UI. Latest results: [0.2.0 evidence](docs/evidence/codex-020-automatic-capture.md). Earlier evidence remains historical.
 
 The release keystore and password live only in owner-controlled secret storage (never in the repo). Release signer SHA-1: `81:48:00:D8:3A:E4:4B:A9:04:99:EE:2F:52:5D:7C:26:61:81:B8:D8`. Losing the keystore means existing installs cannot be updated; keep the backup.
 
@@ -75,7 +77,8 @@ Never enable Workers Paid, R2, Queues, Logpush or any paid plan (`docs/COSTS.md`
 
 ## Owner configuration
 
-See `docs/OWNER_ACTIONS.md` for Google OAuth clients (web + Android release/debug SHA-1s), allowlisted emails, payment-app selection on the phone, and the APK install checklist.
+See `docs/OWNER_ACTIONS.md` for Google OAuth clients (web + Android release/debug SHA-1s), allowlisted emails, real-phone source verification, and the APK install checklist.
+Capture setup itself is global; the owner only identifies which real payment/bank sources to verify on a phone. The deployment script derives the public web client ID from the selected backend configuration. Run `pnpm test:deploy-safety` for local guard tests. Review [security and Free-tier deployment](docs/SECURITY_AND_DEPLOYMENT.md) before any public deployment; account configuration and original release-key access are still pending.
 
 ## Recovery
 
@@ -87,6 +90,6 @@ See `docs/OWNER_ACTIONS.md` for Google OAuth clients (web + Android release/debu
 
 ## Known limitations
 
-Only notifications from selected, installed apps that post readable text are captured; historical notifications from before access was granted are unavailable; Android may delay background sync; receipt originals are local-only; public APK install may be blocked by Play Protect (a distribution limitation). Unverified items are listed in `docs/PROGRESS.md`.
+Only supported sources with accessible readable payment alerts are captured; cleared notification history and the SMS inbox are unavailable. Currently visible alerts are imported when capture connects/resumes. Android can redact content or delay sync, and the OS may require restricted-settings approval for a sideloaded APK. Receipt originals are local-only; public APK installation may be blocked by Play Protect. Unverified items are listed in `docs/PROGRESS.md`.
 
 Native diagnostics are scoped to the bound account. Notification text stays in the Keystore-encrypted payload; previews are decrypted on demand, rather than persisted as plaintext. Room schema version 2 includes a migration clearing legacy preview strings while retaining encrypted payloads. Current build/instrumentation status is recorded in progress; this is not a claim of physical-device verification.

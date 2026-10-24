@@ -1,0 +1,8 @@
+Final unsigned release static scan
+Timestamp: 2026-10-25T00:42:06.7623152+05:30
+SHA256: 2203c64debed96c0c074df0a2141a972d733f627b1b2987db3647b1c5e50212c
+Scanned DEX/web/config entries: 11
+No debug receiver/fixture package visibility/READ_SMS/RECEIVE_SMS in manifest.
+No emulator host/debug receiver/key-shaped/private-key pattern hits in scanned entries.
+Unsigned; not an install/signing/physical-phone security audit.
+

@@ -1,5 +1,9 @@
 # Test matrix
 
+## Latest 0.2.0 results — 25 October 2026
+
+68 domain / 48 local API / 20 browser / 8 native instrumentation / 12 deployment guard cases passed; lint/typecheck and APK builds passed. Synthetic global/current/new collection with no selected sources, automatic-mode lifecycle, local native sync and bank/time/purpose display verified. Forced concurrent reads reproduce the former edit/allocation race; guarded writes now pass. Browser purpose/duplicate confirmation and CSP enforcement pass on desktop/mobile. See `evidence/codex-020-automatic-capture.md` for raw logs, limits and transient test recovery. Live/physical/deployment gates remain pending; earlier rows are historical.
+
 | Area | Case | Expected | Actual | Env | Date |
 |---|---|---|---|---|---|
 | Domain | ₹1,23,456.78 → 12,345,678 paise; 0.10+0.20=0.30 | exact | pass | vitest 4.1.12, Node 22 | 2026-10-24 |

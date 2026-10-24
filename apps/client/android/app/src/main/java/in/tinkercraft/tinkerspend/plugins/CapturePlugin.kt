@@ -27,6 +27,7 @@ class CapturePlugin : Plugin() {
             put("pendingCount", dao.pendingCount(prefs.boundUserId))
             put("failedCount", dao.failedCount(prefs.boundUserId))
             put("captureEnabled", prefs.captureEnabled)
+            put("automaticSources", prefs.automaticSources)
             put("boundUser", prefs.boundUserId)
             put("selectedPackages", JSArray(prefs.selectedPackages.toList()))
             put("outboxBytes", dao.storedBytes())
@@ -49,6 +50,18 @@ class CapturePlugin : Plugin() {
         if (enabled && prefs.boundUserId == null) { call.reject("Sign in before enabling capture", "no_user"); return@execute }
         prefs.captureEnabled = enabled
         if (enabled) prefs.pausedReason = null
+        if (enabled && prefs.automaticSources) ListenerHolder.instance?.importCurrent()
+        call.resolve(status())
+    }
+
+    /** One disclosed capture consent, then the Android system's app-wide notification-access switch. */
+    @PluginMethod fun enableAutomaticCapture(call: PluginCall) = io.execute {
+        val prefs = Prefs(context)
+        if (prefs.boundUserId == null) { call.reject("Sign in before enabling capture", "no_user"); return@execute }
+        prefs.automaticSources = true
+        prefs.captureEnabled = true
+        prefs.pausedReason = null
+        ListenerHolder.instance?.importCurrent()
         call.resolve(status())
     }
 
@@ -93,13 +106,7 @@ class CapturePlugin : Plugin() {
     @PluginMethod fun importActiveNotifications(call: PluginCall) = io.execute {
         val svc = ListenerHolder.instance
         if (svc == null) { call.reject("Listener not connected", "not_connected"); return@execute }
-        var n = 0
-        for (sbn in svc.activeNotifications ?: emptyArray()) {
-            val notif = sbn.notification ?: continue
-            if (notif.flags and android.app.Notification.FLAG_GROUP_SUMMARY != 0) continue
-            val s = Capturer.Snapshot.from(sbn.packageName, sbn.key ?: "", if (notif.`when` > 0) notif.`when` else sbn.postTime, notif) ?: continue
-            if (Capturer.capture(context, s, isCurrentImport = true) == "captured") n++
-        }
+        val n = svc.importCurrent()
         call.resolve(JSObject().put("imported", n))
     }
 

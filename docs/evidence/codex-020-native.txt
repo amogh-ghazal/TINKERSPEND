@@ -1,0 +1,25 @@
+Performing Streamed Install
+Success
+Performing Streamed Install
+Success
+Performing Streamed Install
+Success
+
+com.getcapacitor.myapp.ExampleInstrumentedTest:.
+in.tinkercraft.tinkerspend.capture.AutomaticCaptureTest:..
+in.tinkercraft.tinkerspend.capture.CapturePipelineTest:.
+in.tinkercraft.tinkerspend.capture.EncryptedOutboxTest:..
+in.tinkercraft.tinkerspend.capture.OutboxIsolationTest:..
+
+Time: 0.229
+
+OK (8 tests)
+
+
+Broadcasting: Intent { act=in.tinkercraft.tinkerspend.DEBUG_CONFIG flg=0x400000 pkg=in.tinkercraft.tinkerspend (has extras) }
+Broadcast completed: result=0
+
+
+10-25 00:15:23.351  2125  2300 I TSDebug : state install=b4f59e7e-8487-4d65-8a79-f1365251e22f authPaused=false lastSyncAt=0 owner=synthetic-emulator-owner enabled=true selected=[in.tinkercraft.tinkerspend.fixture] listener=true pending=1 failed=0 lastEventAt=1792867514487
+PASS: synthetic payment capture, repeat callback collapse, OTP/promotion filtering; no app UI launched by this script.
+No real UPI, live OpenAI, Google sign-in or physical-device result is implied.

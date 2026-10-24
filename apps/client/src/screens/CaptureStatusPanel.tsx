@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Capture, isNative, type CaptureStatus, type CapturedEventSummary, type InstalledSource } from "../native";
+import { Capture, isNative, type CaptureStatus, type CapturedEventSummary } from "../native";
 
 function fmt(ts: number | null) {
   return ts ? new Date(ts).toLocaleString("en-IN") : "never";
@@ -7,16 +7,16 @@ function fmt(ts: number | null) {
 
 export function CaptureStatusPanel() {
   const [status, setStatus] = useState<CaptureStatus | null>(null);
-  const [sources, setSources] = useState<InstalledSource[]>([]);
   const [events, setEvents] = useState<CapturedEventSummary[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
 
   const refresh = useCallback(async () => {
     if (!isNative) return;
     try {
       setStatus(await Capture.getStatus());
-      setSources((await Capture.listSupportedSources()).sources);
       setEvents((await Capture.recentEvents({ limit: 10 })).events);
+      setError(null);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     }
@@ -39,15 +39,23 @@ export function CaptureStatusPanel() {
   }
 
   const connected = !!status?.permissionGranted && !!status?.listenerConnected;
-  const toggle = async (pkg: string, on: boolean) => {
-    const cur = new Set(status?.selectedPackages ?? []);
-    if (on) cur.add(pkg); else cur.delete(pkg);
-    setStatus(await Capture.setSelectedPackages({ packages: [...cur] }));
+  const enable = async () => {
+    setBusy(true); setError(null);
+    try {
+      const next = await Capture.enableAutomaticCapture();
+      setStatus(next);
+      if (!next.permissionGranted) await Capture.openNotificationAccessSettings();
+      else await refresh();
+    } catch (e) { setError((e as Error).message); }
+    finally { setBusy(false); }
   };
 
   return (
     <section className="card" aria-labelledby="capture-h">
       <h2 id="capture-h">Automatic payment capture</h2>
+      <p>Allow TinkerSpend notification access once. Supported payment and bank apps are detected automatically; there is no app-by-app permission setup.</p>
+      <p>When enabled, current visible alerts and new alerts are checked on this phone. Only payment-like alerts from supported sources, including recognized bank senders in supported messaging apps, are saved and synced to your account. Personal messages, OTPs, promotions and unrelated alerts are filtered on the phone. Android may hide sensitive content.</p>
+      <p className="muted">This does not read your SMS inbox or recover cleared notifications. Some bank formats are unsupported. Stored alerts are encrypted locally; bank names are reported from the alert, not independently verified. You can pause capture or revoke notification access at any time.</p>
       {error && <p role="alert" className="error">{error}</p>}
       <dl className="kv" data-testid="capture-status">
         <dt>Notification access</dt><dd>{status?.permissionGranted ? "Granted" : "Not granted"}</dd>
@@ -58,21 +66,17 @@ export function CaptureStatusPanel() {
         <dt>Pending upload</dt><dd>{status?.pendingCount ?? 0} ({status?.failedCount ?? 0} failed)</dd>
       </dl>
       <div className="row">
-        <button onClick={() => void Capture.openNotificationAccessSettings()}>Open Android notification access</button>
-        <button onClick={async () => setStatus(await Capture.setCaptureEnabled({ enabled: !status?.captureEnabled }))}>{status?.captureEnabled ? "Pause capture" : "Resume capture"}</button>
+        {(!status?.automaticSources || !status?.permissionGranted) && <button disabled={busy} onClick={() => void enable()}>{busy ? "Opening…" : "Enable automatic capture"}</button>}
+        {status?.automaticSources && <button disabled={busy} onClick={async () => {
+          setBusy(true); setError(null);
+          try { setStatus(await Capture.setCaptureEnabled({ enabled: !status.captureEnabled })); }
+          catch (e) { setError((e as Error).message); }
+          finally { setBusy(false); }
+        }}>{status.captureEnabled ? "Pause capture" : "Resume capture"}</button>}
+        {status?.permissionGranted && <button className="secondary" onClick={() => void Capture.openNotificationAccessSettings()}>Manage notification access</button>}
         <button onClick={() => void refresh()}>Refresh</button>
       </div>
-      <h3>Payment sources</h3>
-      <ul className="plain">
-        {sources.map((s) => (
-          <li key={s.packageName}>
-            <label>
-              <input type="checkbox" disabled={!s.installed} checked={status?.selectedPackages.includes(s.packageName) ?? false} onChange={(e) => void toggle(s.packageName, e.target.checked)} />{" "}
-              {s.label} {s.installed ? "" : "(not installed)"}
-            </label>
-          </li>
-        ))}
-      </ul>
+      <p>Supported sources are recognized automatically. An ambiguous debit is logged for review; failed payments and transfers are not silently counted as spending.</p>
       <h3>Recent captured events (on this device)</h3>
       <ul className="plain" data-testid="recent-events">
         {events.length === 0 && <li>None yet.</li>}

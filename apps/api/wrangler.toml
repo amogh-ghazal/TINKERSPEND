@@ -25,6 +25,7 @@ OPENAI_EXTRACT_MODEL = "gpt-4.1-mini"
 AI_DAILY_GLOBAL_LIMIT = "100"
 AI_USER_CLASSIFY_LIMIT = "50"
 SESSION_DAYS = "30"
+AUTH_CHALLENGE_DAILY_LIMIT = "1000"
 
 [env.production]
 name = "tinkerspend"
@@ -39,6 +40,7 @@ OPENAI_EXTRACT_MODEL = "gpt-4.1-mini"
 AI_DAILY_GLOBAL_LIMIT = "100"
 AI_USER_CLASSIFY_LIMIT = "50"
 SESSION_DAYS = "30"
+AUTH_CHALLENGE_DAILY_LIMIT = "1000"
 [[env.production.d1_databases]]
 binding = "DB"
 database_name = "tinkerspend-prod"

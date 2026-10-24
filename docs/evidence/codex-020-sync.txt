@@ -1,0 +1,4 @@
+Observed one pending INR 700 transaction before posting the success update.
+10-25 00:21:02.124  1443  2221 I TSDebug : state install=b4f59e7e-8487-4d65-8a79-f1365251e22f authPaused=false lastSyncAt=1792867860218 owner=95edbb5f-a984-4d67-89e6-c4a1620f53dc enabled=true selected=[] listener=true pending=0 failed=0 lastEventAt=1792867860128
+{"amount":"700.00","amount_paise":70000,"payment_status":"successful","source":"notification","counterparty":"Metro Mart","review_state":"needs_review","reported_bank":"HDFC Bank","notification_posted_at":1792867858212}
+PASS: native WorkManager -> local Worker/D1; pending -> successful upgrades one INR 700 transaction. Synthetic source and local fake identity only.

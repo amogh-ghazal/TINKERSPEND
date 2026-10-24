@@ -2,6 +2,16 @@
 
 _Status legend: **implemented** (code exists), **tested** (automated/manual evidence recorded), **failed**, **not tested**._
 
+## Latest — 25 October 2026, automatic capture 0.2.0 / code 3
+
+Implemented the owner's amended flow: one account-bound automatic opt-in + Android app-wide notification access, no per-source selection prompts; current visible/new notification collection; supported bank messaging alerts with personal/OTP/owner-reply filtering; explicit alert-time/reported-bank metadata; purpose/category clarification without blocking capture; safer duplicate and opposite-direction handling. The existing visual style is preserved for the owner's later redesign.
+
+Verified: **68 domain, 48 local API, 20 browser, 8 Android instrumentation and 12 deployment-guard cases passed**; lint/typecheck and Android debug/test/fixture/unsigned-release builds passed. Actual automatic capture with `selected=[]`, current-alert import on access grant, process/access/reboot recovery and native WorkManager → local D1 passed. A native screenshot shows bank/time/purpose fields. New deterministic concurrent-edit coverage reproduced and now prevents losing edits from corrupting allocations/rules; category-edit provenance was corrected.
+
+Security/readiness: native bearer-only sessions, production fake-auth rejection, bounded anonymous sign-in writes, web CSP/headers and explicit unsafe-deploy guards. `wrangler whoami` is not authenticated. Cloudflare Free deployment is prepared but not performed; actual billing/CPU limits, live OAuth/OpenAI, original release-key backup and physical/public APK checks remain pending. No paid services, new accounts, DNS changes, merge or final submission.
+
+[Behavior](NOTIFICATION_CAPTURE.md) · [Security/hosting](SECURITY_AND_DEPLOYMENT.md) · [Actual evidence and limits](evidence/codex-020-automatic-capture.md). Earlier sections below are historical checkpoints.
+
 ## Codex continuation — 24 October 2026 (IST)
 
 The owner explicitly transferred implementation to Codex. The historical Devin-only wording in the original spec is superseded for workflow; its product/privacy/free-tier constraints remain.

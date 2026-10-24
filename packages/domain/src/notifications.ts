@@ -1,7 +1,7 @@
 import { parseRupeesToPaise } from "./money";
 import type { Kind, PaymentStatus } from "./categories";
 
-export const NOTIFICATION_PARSER_VERSION = "np-1";
+export const NOTIFICATION_PARSER_VERSION = "np-2";
 
 /** Packages verified from official store metadata. The fixture harness is never trusted in production. */
 export const KNOWN_SOURCES: Record<string, { label: string; kind: "upi_app" | "bank" }> = {
@@ -136,6 +136,7 @@ export function parsePaymentNotification(n: NotificationText): ParseOutcome {
 
   let kindHint: Kind = "unknown";
   if (isRefund && !/\breversed|reversal\b/i.test(t)) kindHint = "refund";
+  else if (SELF_TRANSFER_RE.test(t) || WALLET_RE.test(t)) kindHint = "transfer";
   else if (direction === "credit") kindHint = "income";
   else if (direction === "debit") {
     if (SELF_TRANSFER_RE.test(t) || CASH_RE.test(t) || WALLET_RE.test(t) || CARD_REPAY_RE.test(t)) {
@@ -143,14 +144,15 @@ export function parsePaymentNotification(n: NotificationText): ParseOutcome {
       if (CASH_RE.test(t)) ambiguity.push("cash_withdrawal");
       if (WALLET_RE.test(t)) ambiguity.push("wallet_top_up");
       if (CARD_REPAY_RE.test(t)) ambiguity.push("card_repayment");
-    } else kindHint = "unknown"; // a debit is not automatically an expense
+    } else if (/\b(?:purchase|purchased|spent)\b[\s\S]*\bat\b/i.test(t) && extractCounterparty(t, direction) && !looksLikePersonName(extractCounterparty(t, direction))) kindHint = "expense";
+    else kindHint = "unknown"; // a debit is not automatically an expense
   }
 
   let reference: { namespace: string; value: string } | null = null;
   for (const p of REF_PATTERNS) {
     const m = p.re.exec(t);
     if (m?.[1]) {
-      reference = { namespace: p.ns, value: m[1].toUpperCase() };
+      reference = { namespace: p.ns === "utr" && /^\d{12}$/.test(m[1]) && /\bupi\b/i.test(t) ? "upi_ref" : p.ns, value: m[1].toUpperCase() };
       break;
     }
   }

@@ -11,8 +11,8 @@ android {
         applicationId "in.tinkercraft.tinkerspend"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode Integer.parseInt(envOr('TS_VERSION_CODE', '2'))
-        versionName envOr('TS_VERSION_NAME', '0.1.1')
+        versionCode Integer.parseInt(envOr('TS_VERSION_CODE', '3'))
+        versionName envOr('TS_VERSION_NAME', '0.2.0')
         buildConfigField "String", "GOOGLE_WEB_CLIENT_ID", "\"${envOr('GOOGLE_WEB_CLIENT_ID', '')}\""
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {

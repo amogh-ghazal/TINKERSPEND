@@ -8,6 +8,7 @@ import org.json.JSONObject
 import java.security.MessageDigest
 import java.util.UUID
 import java.util.concurrent.Executors
+import androidx.core.app.NotificationCompat
 
 class PaymentNotificationListener : NotificationListenerService() {
     override fun onListenerConnected() {
@@ -15,6 +16,7 @@ class PaymentNotificationListener : NotificationListenerService() {
         prefs.listenerConnected = true
         prefs.lastListenerConnectAt = System.currentTimeMillis()
         `in`.tinkercraft.tinkerspend.plugins.ListenerHolder.instance = this
+        if (prefs.automaticSources && prefs.captureEnabled) executor.execute { importCurrent() }
     }
 
     override fun onListenerDisconnected() {
@@ -25,13 +27,39 @@ class PaymentNotificationListener : NotificationListenerService() {
     }
 
     override fun onNotificationPosted(sbn: StatusBarNotification) {
+        snapshots(sbn).forEach { snapshot -> executor.execute { Capturer.capture(applicationContext, snapshot, isCurrentImport = false) } }
+    }
+
+    /** Only currently accessible alerts. Reconnects are safe because capture has durable deduplication. */
+    fun importCurrent(): Int {
+        var captured = 0
+        try {
+            for (sbn in activeNotifications ?: emptyArray()) for (snapshot in snapshots(sbn)) {
+                if (Capturer.capture(applicationContext, snapshot, isCurrentImport = true) == "captured") captured++
+            }
+        } catch (_: SecurityException) { /* Access can be revoked between querying and copying. */ }
+        return captured
+    }
+
+    internal fun snapshots(sbn: StatusBarNotification): List<Capturer.Snapshot> {
         // Keep the callback short: copy fields, then persist off the main thread.
-        val pkg = sbn.packageName ?: return
-        val n = sbn.notification ?: return
-        if (n.flags and Notification.FLAG_GROUP_SUMMARY != 0) return
-        if (n.flags and Notification.FLAG_ONGOING_EVENT != 0) return
-        val snapshot = Capturer.Snapshot.from(pkg, sbn.key ?: "", if (n.`when` > 0) n.`when` else sbn.postTime, n) ?: return
-        executor.execute { Capturer.capture(applicationContext, snapshot, isCurrentImport = false) }
+        val pkg = sbn.packageName ?: return emptyList()
+        if (pkg !in SupportedSources.all && pkg !in SupportedSources.MESSAGING) return emptyList()
+        val n = sbn.notification ?: return emptyList()
+        if (n.flags and Notification.FLAG_GROUP_SUMMARY != 0 || n.flags and Notification.FLAG_ONGOING_EVENT != 0) return emptyList()
+        if (pkg in SupportedSources.MESSAGING) {
+            val messages = try { NotificationCompat.MessagingStyle.extractMessagingStyleFromNotification(n)?.messages } catch (_: RuntimeException) { null }
+            if (!messages.isNullOrEmpty()) return messages.mapNotNull { message ->
+                // A null sender is the phone owner's outgoing message, never bank evidence.
+                val title = message.person?.name?.toString() ?: return@mapNotNull null
+                if (!SupportedSources.bankMessageTitle(title)) null else {
+                    val time = message.timestamp.takeIf { it > 0 } ?: sbn.postTime
+                    Capturer.Snapshot(pkg, sbn.key + "#message:$time", time, title, message.text?.toString()?.take(4000))
+                }
+            }
+        }
+        val snapshot = Capturer.Snapshot.from(pkg, sbn.key ?: "", if (n.`when` > 0) n.`when` else sbn.postTime, n) ?: return emptyList()
+        return if (SupportedSources.eligible(pkg, snapshot.title)) listOf(snapshot) else emptyList()
     }
 
     companion object {
@@ -41,7 +69,7 @@ class PaymentNotificationListener : NotificationListenerService() {
 
 object Capturer {
     private const val TAG = "TSCapture"
-    const val PARSER_VERSION = "kt-1"
+    const val PARSER_VERSION = "kt-2"
     const val OUTBOX_LIMIT_BYTES = 50L * 1024 * 1024
 
     data class Snapshot(val pkg: String, val key: String, val postedAt: Long, val title: String?, val text: String?) {
@@ -67,7 +95,8 @@ object Capturer {
         val owner = prefs.boundUserId
         if (!prefs.captureEnabled) return "capture_disabled"
         if (owner == null) return "no_user"
-        if (s.pkg !in prefs.selectedPackages || s.pkg !in SupportedSources.all) return "source_not_selected"
+        if (prefs.automaticScopeConfigured && !prefs.automaticSources) return "consent_required"
+        if ((!prefs.automaticSources && s.pkg !in prefs.selectedPackages) || !SupportedSources.eligible(s.pkg, s.title)) return "source_not_selected"
         val combined = listOfNotNull(s.title, s.text).joinToString("\n")
         val pf = Prefilter.check(combined)
         if (pf != Prefilter.Result.ACCEPT) return "filtered_${pf.name.lowercase()}"
