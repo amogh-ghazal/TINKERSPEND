@@ -3,8 +3,8 @@
 ## 2026-10-25 — Personal WhatsApp draft intake
 
 - Changed: added signed Meta webhook verification, replay protection, one-time account linking and Settings controls for a personal WhatsApp intake. Linked text, JPEG/PNG receipt images and supported voice notes use the existing draft/review and AI quota paths; no message content or media is persisted.
-- Validation: API typecheck and the existing 48 API tests pass. This checkpoint has not been deployed or connected to Meta.
-- Limits: a dedicated official WhatsApp Business number plus private Worker secrets, production migration/deployment and real-message verification are still required. It does not automate a personal WhatsApp account.
+- Validation: API typecheck and the existing 48 API tests passed. Migration `0005_whatsapp_personal.sql` and Worker version `5afb7605-c797-478d-afa2-43ccd85f357c` are deployed; live health returned `ok`.
+- Limits: a dedicated official WhatsApp Business number plus private Worker secrets and real-message verification are still required. It does not automate a personal WhatsApp account.
 
 ## 2026-10-25 — Production account access
 

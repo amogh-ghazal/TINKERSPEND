@@ -6,7 +6,7 @@ _Status legend: **implemented** (code exists), **tested** (automated/manual evid
 
 Production is live at `https://expenses.tinkercraft.in` on Cloudflare Workers Free + D1 Free. The dedicated custom domain is active, static assets return HTTPS 200 with the configured CSP, and `/api/v1/health` returned `{ "ok": true, "env": "production" }` with a production D1 response. The production Web OAuth client is configured in the Worker and deployed bundle. `pnpm test:deploy-safety` passed 12/12 and the production D1 migration check reported no pending migrations.
 
-The production owner account is now in the backend invite allowlist; refresh the site and complete Google sign-in to verify the live session. OpenAI-backed voice, receipt and AI categorization remain disabled until an `OPENAI_API_KEY` is added as a Worker secret. A personal WhatsApp webhook/linking implementation is ready locally but has not been migrated, deployed or connected to a Meta WhatsApp Business number. The public signed APK remains pending the original release key and a real Android device.
+The production owner account is now in the backend invite allowlist; refresh the site and complete Google sign-in to verify the live session. OpenAI-backed voice, receipt and AI categorization remain disabled until an `OPENAI_API_KEY` is added as a Worker secret. The personal WhatsApp webhook/linking implementation and its production migration are deployed, but it remains inactive until it is connected to a Meta WhatsApp Business number and private Worker secrets. The public signed APK remains pending the original release key and a real Android device.
 
 ## Previous — 25 October 2026, automatic capture 0.2.0 / code 3
 
