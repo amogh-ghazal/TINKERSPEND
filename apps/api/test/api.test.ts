@@ -209,3 +209,32 @@ describe("notification ingestion", () => {
     expect(res.status).toBe(403);
   });
 });
+
+describe("user corrections survive later source updates (M3)", () => {
+  const ev = (o: Record<string, unknown>) => ({
+    event_id: uuid(), source_package: "in.tinkercraft.tinkerspend.fixture", source_key_hash: "k9", posted_at: Date.parse("2026-10-16T06:00:00Z"), captured_at: Date.now(),
+    content_hash: crypto.randomUUID().replace(/-/g, "").repeat(2), parser_version: "kt-1", is_current_import: false, timezone: "Asia/Kolkata", ...o,
+  });
+  const send = (a: { token: string; installId: string }, e: unknown) => call("POST", "/api/v1/notifications/batch", { token: a.token, body: { device_install_id: a.installId, events: [e] } });
+
+  it("pending→success keeps user-edited kind, category and payee; a user-locked status is not overwritten", async () => {
+    const a = await loginAndroid("sub-corr", "corr@example.com");
+    const p = await send(a, ev({ title: "Payment pending", text: "Payment of Rs.700 to Ravi K is pending. UPI Ref No 612345678901" }));
+    const id = p.json.acks[0].transaction_id as string;
+    const t0 = (await call("GET", `/api/v1/transactions/${id}`, { token: a.token })).json.transaction;
+    expect(t0.review_state).toBe("needs_review"); // person-like payee: no guess into spending
+    const ed = await call("PATCH", `/api/v1/transactions/${id}`, { token: a.token, body: { version: t0.version, kind: "expense", category_id: "household", counterparty: "Ravi (maid)" } });
+    expect(ed.status).toBe(200);
+    await send(a, ev({ title: "Payment successful", text: "Rs.700 paid to Ravi K. UPI Ref No 612345678901" }));
+    const t1 = (await call("GET", `/api/v1/transactions/${id}`, { token: a.token })).json.transaction;
+    expect(t1).toMatchObject({ payment_status: "successful", kind: "expense", counterparty: "Ravi (maid)" });
+    expect(t1.allocations).toEqual([{ category_id: "household", amount_paise: 70000 }]);
+
+    const q = await send(a, ev({ title: "Payment pending", text: "Payment of Rs.120 to Tea Stall is pending. UPI Ref No 612345678902" }));
+    const id2 = q.json.acks[0].transaction_id as string;
+    const v = (await call("GET", `/api/v1/transactions/${id2}`, { token: a.token })).json.transaction.version;
+    await call("PATCH", `/api/v1/transactions/${id2}`, { token: a.token, body: { version: v, payment_status: "failed" } });
+    await send(a, ev({ title: "Payment successful", text: "Rs.120 paid to Tea Stall. UPI Ref No 612345678902" }));
+    expect((await call("GET", `/api/v1/transactions/${id2}`, { token: a.token })).json.transaction.payment_status).toBe("failed");
+  });
+});

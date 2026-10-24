@@ -35,3 +35,4 @@
 | API (local) — M3 | 8 concurrent classify at user count 47/50 → exactly 3 upstream calls, 5×429, counter 50 | as spec §16 | pass (Miniflare D1; deployed D1 pending) | same | 2026-10-24 |
 | API (local) — M3 | Cross-user classify → 404; AI disabled → skipped, 0 calls | as spec | pass | same | 2026-10-24 |
 | Real OpenAI classification | Model access, structured output, real latency/usage | — | **pending**: needs OPENAI_API_KEY; `gpt-4.1-mini` is an unverified placeholder | — | — |
+| API (local) — M3 | Pending notification → user edits kind/category/payee → success notification: status upgrades, edits kept; user-locked `failed` not overwritten by later success | as spec §10/M3 exit | pass (20/20 API tests) | vitest-pool-workers | 2026-10-24 |
