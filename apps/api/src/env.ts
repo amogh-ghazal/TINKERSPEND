@@ -15,6 +15,11 @@ export interface Env {
   AI_DAILY_GLOBAL_LIMIT: string;
   SESSION_DAYS: string;
   AUTH_CHALLENGE_DAILY_LIMIT?: string;
+  /** Meta WhatsApp credentials. All are Worker secrets, never bundle these into the client. */
+  WHATSAPP_VERIFY_TOKEN?: string;
+  WHATSAPP_APP_SECRET?: string;
+  WHATSAPP_ACCESS_TOKEN?: string;
+  WHATSAPP_PHONE_NUMBER_ID?: string;
   /** Test-only: replaces Google JWKS verification. Never set in deployed environments. */
   TEST_ID_TOKEN_VERIFIER?: string;
 }

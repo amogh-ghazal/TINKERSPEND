@@ -7,6 +7,7 @@ import { ledger } from "./ledger";
 import { ingest } from "./ingest";
 import { ai } from "./ai";
 import { drafts } from "./drafts";
+import { whatsappSettings, whatsappWebhook } from "./whatsapp";
 import { SettingsPatch } from "@tinkerspend/contracts";
 import { isValidTimeZone } from "@tinkerspend/domain";
 
@@ -29,6 +30,7 @@ app.onError((err, c) => {
 app.notFound((c) => (new URL(c.req.url).pathname.startsWith("/api/") ? errorResponse(c, new ApiError(404, "not_found", "Not found")) : c.text("Not found", 404)));
 
 const api = new Hono<AppVars>();
+app.route("/api/v1/whatsapp", whatsappWebhook);
 api.get("/health", async (c) => {
   const t0 = now();
   await c.env.DB.prepare("SELECT 1").first();
@@ -74,6 +76,7 @@ api.route("/", ledger);
 api.route("/", ingest);
 api.route("/", ai);
 api.route("/", drafts);
+api.route("/whatsapp", whatsappSettings);
 
 app.route("/api/v1", api);
 

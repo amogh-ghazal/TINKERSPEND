@@ -5,12 +5,16 @@ import { isNative, AuthBridge } from "../native";
 import type { Me } from "../lib/types";
 
 interface Device { id: string; label: string | null; created_at: number; last_seen_at: number | null; revoked_at: number | null }
+interface WhatsAppStatus { linked: boolean; linked_at: number | null }
 
 export function Settings({ me, onSignedOut }: { me: Me; onSignedOut: () => void }) {
   const [devices, setDevices] = useState<Device[]>([]);
   const [msg, setMsg] = useState<string | null>(null);
+  const [whatsApp, setWhatsApp] = useState<WhatsAppStatus | null>(null);
+  const [linkCode, setLinkCode] = useState<{ code: string; expires_at: number } | null>(null);
   const load = () => api<{ items: Device[] }>("GET", "/devices").then((r) => setDevices(r.items), () => {});
-  useEffect(() => { void load(); }, []);
+  const loadWhatsApp = () => api<WhatsAppStatus>("GET", "/whatsapp/status").then(setWhatsApp, () => {});
+  useEffect(() => { void load(); void loadWhatsApp(); }, []);
 
   async function exportCsv() {
     const csv = await api<string>("GET", "/export.csv");
@@ -37,6 +41,10 @@ export function Settings({ me, onSignedOut }: { me: Me; onSignedOut: () => void 
     if (!confirm(`Revoke ${d.label ?? "device"}? It will stop syncing until signed in again.`)) return;
     await api("DELETE", `/devices/${d.id}`); setMsg("Device revoked"); void load();
   }
+  async function createWhatsAppLink() {
+    const result = await api<{ code: string; expires_at: number }>("POST", "/whatsapp/link", {});
+    setLinkCode(result); setMsg("Send the displayed LINK message to your configured TinkerSpend WhatsApp number within 10 minutes.");
+  }
 
   return (
     <section className="card" aria-labelledby="set-h">
@@ -47,6 +55,10 @@ export function Settings({ me, onSignedOut }: { me: Me; onSignedOut: () => void 
       {devices.length === 0 ? <p className="muted">No Android devices registered.</p> : (
         <ul className="plain">{devices.map((d) => <li key={d.id} className="row between"><span>{d.label ?? "Android"} {d.revoked_at ? "(revoked)" : ""}</span>{!d.revoked_at && <button className="secondary" onClick={() => revoke(d)}>Revoke</button>}</li>)}</ul>
       )}
+      <h3>WhatsApp personal intake</h3>
+      {whatsApp?.linked ? <p className="muted">Your WhatsApp number is linked. Text, receipt photos and voice notes create reviewable drafts.</p> : <p className="muted">Link your own WhatsApp number after the Meta WhatsApp webhook is configured.</p>}
+      {!whatsApp?.linked && <button className="secondary" onClick={() => void createWhatsAppLink()}>Generate WhatsApp link code</button>}
+      {linkCode && <p role="status"><strong>LINK {linkCode.code}</strong><br />Send this exact message to the TinkerSpend WhatsApp number before {new Date(linkCode.expires_at).toLocaleTimeString()}.</p>}
       {msg && <p role="status">{msg}</p>}
       <h3>Danger zone</h3>
       <button className="secondary danger" onClick={deleteAccount}>Delete my data</button>
