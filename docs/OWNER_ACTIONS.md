@@ -17,7 +17,6 @@ The earlier BlueStacks connection failed; its settings were not changed. Notific
 
 The Codex development builds (including 0.2.0 / code 3) use this laptop's debug signer above. Register the actual build's fingerprint for Google sign-in; the earlier Devin shared debug fingerprint does not apply to these local builds. Preserve the original release key separately. The 0.2.0 release variant currently builds unsigned for static checks, not public installation.
 
-Before deployment, verify the actual Cloudflare account is on Workers Free/D1 Free. Configure real database IDs, the public Google client ID and exact HTTPS origins; the deploy script builds the website with that same client ID automatically. The guard refuses placeholders, fake test authentication, missing sign-in config and non-HTTPS origins. No Cloudflare account/billing state has been inspected or changed. See `SECURITY_AND_DEPLOYMENT.md`; no secret values should be pasted into chat.
+Cloudflare OAuth is authenticated and both D1 databases are migrated; their IDs are configured in Wrangler. Verify the account plan is Workers Free/D1 Free before publishing. Configure the public Google Web client ID and exact HTTPS origins; the deploy script uses the same client ID for the website. The guard refuses placeholders, fake test authentication, missing sign-in config and non-HTTPS origins. Billing tier and domain zone access have not yet been verified. See `SECURITY_AND_DEPLOYMENT.md`; no secret values should be pasted into chat.
 
-Read-only CLI check on 25 October: `wrangler whoami` reports not authenticated. No login, temporary preview account, deployment, DNS or billing change was performed.
-
+Read-only account/zone inspection and Google Cloud OAuth setup remain pending; local browser control is disabled in this session. No Worker/site deployment or DNS change was performed. Staging and production D1 databases were created on Cloudflare Free-capable D1 and all four migrations were applied.
