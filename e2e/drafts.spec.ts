@@ -5,7 +5,7 @@ test("typed statement → two editable drafts → explicit save with paid confir
   await login(page, `drafts-${info.project.name}@e2e.test`);
   await page.getByRole("button", { name: "WhatsApp", exact: true }).click();
   const qa = page.getByRole("region", { name: "WhatsApp concept demo" });
-  await qa.getByLabel("Message").fill("Yesterday, lunch 180 and auto 80");
+  await qa.locator("#expense-message").fill("Yesterday, lunch 180 and auto 80");
   await qa.getByRole("button", { name: "Send message" }).click();
   await expect(qa.locator(".chat-message.person").last()).toContainText("Yesterday, lunch 180 and auto 80");
   await expect(qa.locator(".chat-message.assistant").last()).toContainText("Added as a draft");
@@ -26,7 +26,7 @@ test("typed statement → two editable drafts → explicit save with paid confir
   await drafts.nth(0).getByRole("button", { name: "Discard" }).click();
   await expect(drafts).toHaveCount(0);
 
-  await page.getByRole("button", { name: "Transactions" }).click();
-  await expect(page.getByTestId("txn").filter({ hasText: "190.00" })).toHaveCount(1);
-  await expect(page.getByTestId("txn").filter({ hasText: "80.00" })).toHaveCount(0);
+  await page.getByRole("button", { name: "Back to TinkerSpend" }).click();
+  await expect(page.getByTestId("gross")).toHaveText("₹190.00");
+  await expect(page.getByTestId("review")).toHaveCount(0);
 });

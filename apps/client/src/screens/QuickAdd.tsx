@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { CATEGORIES, type CategoryId } from "@tinkerspend/domain";
 import { api, ApiFailure, newOperationId } from "../lib/api";
-import { KIND_LABEL } from "../lib/format";
+import { categoryName, KIND_LABEL } from "../lib/format";
 import type { Draft, DraftEntry, Txn } from "../lib/types";
 import { isNative, Recorder } from "../native";
 import { loadReceipt, normalizeReceipt, saveReceipt } from "../lib/receipts";
@@ -28,9 +28,10 @@ function pickMime() {
 }
 
 type Rec = { state: "idle" } | { state: "recording"; startedAt: number } | { state: "recorded"; startedAt: number; blob: Blob; durationMs: number; url: string } | { state: "uploading"; startedAt: number; blob: Blob; durationMs: number; url: string };
-type ChatTurn = { id: number; from: "person" | "assistant"; text: string; media?: { type: "image" | "audio"; url: string; durationMs?: number } };
+type ChatTurn = { id: number; from: "person" | "assistant"; text: string; media?: { type: "image" | "audio"; url: string; durationMs?: number }; payment?: boolean; replyDraftId?: string };
+const DEMO_PAYMENT = { amount: "₹3,500", payee: "Vineesh (demo)", time: "23 October 2026 · 05:26 PM", reference: "DEMO-10526" };
 
-export function QuickAdd({ onSaved, onExit }: { onSaved: (t: Txn) => void; onExit: () => void }) {
+export function QuickAdd({ onSaved, onExit, shareToken = 0, onShareHandled = () => undefined }: { onSaved: (t: Txn) => void; onExit: () => void; shareToken?: number; onShareHandled?: (token: number) => void }) {
   const [text, setText] = useState("");
   const [attachMenu, setAttachMenu] = useState(false);
   const [drafts, setDrafts] = useState<Draft[]>([]);
@@ -49,10 +50,13 @@ export function QuickAdd({ onSaved, onExit }: { onSaved: (t: Txn) => void; onExi
   const voiceOp = useRef<string>(newOperationId());
   const [photo, setPhoto] = useState<{ blob: Blob; url: string; takenAt: number; op: string; busy: boolean } | null>(null);
   const [turns, setTurns] = useState<ChatTurn[]>([]);
+  const [reply, setReply] = useState<{ draftId: string; expiresAt: number } | null>(null);
+  const [clock, setClock] = useState(Date.now());
+  const lastShareToken = useRef(0);
   const nextTurnId = useRef(1);
   const trackUrl = (url: string) => { ownedUrls.current.push(url); return url; };
   const releaseUrl = (url: string) => { ownedUrls.current = ownedUrls.current.filter((item) => item !== url); URL.revokeObjectURL(url); };
-  const addTurn = (from: ChatTurn["from"], message: string, media?: ChatTurn["media"]) => setTurns((items) => [...items, { id: nextTurnId.current++, from, text: message, media }]);
+  const addTurn = (from: ChatTurn["from"], message: string, media?: ChatTurn["media"], extra: Pick<ChatTurn, "payment" | "replyDraftId"> = {}) => setTurns((items) => [...items, { id: nextTurnId.current++, from, text: message, media, ...extra }]);
 
   async function pickPhoto(f: File | undefined) {
     if (!f) return;
@@ -84,13 +88,42 @@ export function QuickAdd({ onSaved, onExit }: { onSaved: (t: Txn) => void; onExi
   const load = () => api<{ items: Draft[] }>("GET", "/drafts").then((r) => setDrafts(r.items)).catch((e) => setErr(errText(e)));
   useEffect(() => { load(); return () => { if (timer.current) clearInterval(timer.current); for (const url of ownedUrls.current) URL.revokeObjectURL(url); }; }, []);
 
-  async function extractText(t: string, referenceTime: number) {
+  useEffect(() => {
+    if (!reply) return;
+    const id = window.setInterval(() => setClock(Date.now()), 500);
+    return () => window.clearInterval(id);
+  }, [reply]);
+
+  useEffect(() => {
+    if (!shareToken || lastShareToken.current === shareToken) return;
+    lastShareToken.current = shareToken;
+    const referenceTime = Date.now();
+    setBusy(true); setErr(null);
+    api<{ drafts: Draft[] }>("POST", "/drafts/demo-payment", { operation_id: newOperationId(), reference_time: referenceTime, timezone: tz() }).then(async (r) => {
+      const d = r.drafts[0];
+      if (!d) throw new Error("The demo payment could not be prepared.");
+      setDrafts((items) => [d, ...items.filter((item) => item.id !== d.id)]);
+      setReply({ draftId: d.id, expiresAt: Date.now() + 30_000 });
+      addTurn("person", "", undefined, { payment: true });
+      addTurn("assistant", `Noted — ${DEMO_PAYMENT.amount} sent to ${DEMO_PAYMENT.payee} on ${DEMO_PAYMENT.time}. What was this for? Reply here within 30 seconds and I’ll attach the purpose to this payment.`, undefined, { replyDraftId: d.id });
+    }).catch((e) => setErr(errText(e))).finally(() => { setBusy(false); onShareHandled(shareToken); });
+  }, [shareToken]);
+
+  async function extractText(t: string, referenceTime: number, replyDraftId?: string) {
     setBusy(true); setErr(null); setInfo(null);
     try {
-      const r = await api<{ drafts: Draft[]; method: string; note: string | null }>("POST", "/drafts/text", { operation_id: newOperationId(), text: t, reference_time: referenceTime, timezone: tz() });
-      addTurn("person", t);
-      addTurn("assistant", r.drafts.length ? "Added as a draft. Check the details below before saving." : "Couldn't find a clear expense. Try including the amount.");
-      if (r.method === "deterministic" && r.note) setInfo("Parsed on the server without AI; please check each draft.");
+      const r = await api<{ drafts: Draft[]; method: string; note: string | null }>("POST", "/drafts/text", { operation_id: newOperationId(), text: t, reference_time: referenceTime, timezone: tz(), ...(replyDraftId ? { reply_to_draft_id: replyDraftId } : {}) });
+      addTurn("person", t, undefined, replyDraftId ? { replyDraftId } : {});
+      if (replyDraftId && r.drafts[0]) {
+        const d = r.drafts[0];
+        setDrafts((items) => [d, ...items.filter((item) => item.id !== d.id)]);
+        const category = d.entry.category_id;
+        addTurn("assistant", category && category !== "uncategorized" ? `Got it — “${t}” is linked to this payment and categorized as ${categoryName(category)}. Review the updated draft below before saving.` : `Got it — “${t}” is linked to this payment. I couldn’t confidently choose a category, so please select one in the draft below.`, undefined, { replyDraftId });
+        setReply(null);
+      } else {
+        addTurn("assistant", r.drafts.length ? "Added as a draft. Check the details below before saving." : "Couldn't find a clear expense. Try including the amount.");
+        if (r.method === "deterministic" && r.note) setInfo("Parsed on the server without AI; please check each draft.");
+      }
       setText(""); await load();
     } catch (e) { setErr(errText(e)); } finally { setBusy(false); }
   }
@@ -158,9 +191,15 @@ export function QuickAdd({ onSaved, onExit }: { onSaved: (t: Txn) => void; onExi
   async function uploadRecording(recording: Extract<Rec, { state: "recorded" }>) {
     setRec({ ...recording, state: "uploading" }); setErr(null);
     try {
-      await api("POST", "/drafts/voice", { operation_id: voiceOp.current, reference_time: recording.startedAt, timezone: tz(), mime_type: recording.blob.type || "audio/webm", data_base64: await blobToBase64(recording.blob), duration_ms: Math.max(1, recording.durationMs) });
+      const replyDraftId = reply && recording.startedAt <= reply.expiresAt ? reply.draftId : undefined;
+      const result = await api<{ drafts?: Draft[]; transcript?: string }>("POST", "/drafts/voice", { operation_id: voiceOp.current, reference_time: recording.startedAt, timezone: tz(), mime_type: recording.blob.type || "audio/webm", data_base64: await blobToBase64(recording.blob), duration_ms: Math.max(1, recording.durationMs), ...(replyDraftId ? { reply_to_draft_id: replyDraftId } : {}) });
       addTurn("person", "", { type: "audio", url: recording.url, durationMs: recording.durationMs });
-      addTurn("assistant", "Voice note transcribed. Check the expense draft below before saving.");
+      if (replyDraftId && result.drafts?.[0]) {
+        const d = result.drafts[0]; setDrafts((items) => [d, ...items.filter((item) => item.id !== d.id)]);
+        const category = d.entry.category_id;
+        addTurn("assistant", category && category !== "uncategorized" ? `Voice note linked to this payment and categorized as ${categoryName(category)}. Review the updated draft below.` : "Voice note linked to this payment. The purpose is saved, but its category still needs your choice.", undefined, { replyDraftId });
+        setReply(null);
+      } else addTurn("assistant", "Voice note transcribed. Check the expense draft below before saving.");
       setRec({ state: "idle" }); await load();
     } catch (e) {
       setRec({ ...recording, state: "recorded" });
@@ -212,9 +251,11 @@ export function QuickAdd({ onSaved, onExit }: { onSaved: (t: Txn) => void; onExi
           {turns.length === 0 && <div className="chat-empty-note">Send a message, receipt or voice note</div>}
           <div className="chat-thread" aria-live="polite">
             {turns.map((turn) => <div className={`chat-message ${turn.from}`} key={turn.id}>
+              {turn.payment && <DemoPaymentCard />}
               {turn.media?.type === "image" && <img className="chat-sent-image" src={turn.media.url} alt="Receipt sent in chat" />}
               {turn.media?.type === "audio" && <VoiceMessage url={turn.media.url} durationMs={turn.media.durationMs ?? 0} seed={turn.id} />}
               {turn.text && <p>{turn.text}</p>}
+              {turn.replyDraftId && Date.now() <= (reply?.expiresAt ?? 0) && <button type="button" className="chat-reply-link" onClick={() => { const d = drafts.find((item) => item.id === turn.replyDraftId); if (d) setReply({ draftId: d.id, expiresAt: reply?.expiresAt ?? Date.now() + 30_000 }); }}>Reply about this payment</button>}
               <small className="chat-time">{turn.from === "person" ? "You · " : "TinkerSpend · "}now <span aria-hidden="true">{turn.from === "person" ? "✓✓" : ""}</span></small>
             </div>)}
             {drafts.length > 0 && <div className="whatsapp-drafts"><p className="chat-day">EXPENSES TO REVIEW</p>{drafts.map((d) => <DraftCard key={`${d.id}-${d.version}`} d={d} onChanged={load} onSaved={(t) => { onSaved(t); void load(); }} onReextract={(t) => extractText(t, d.reference_at).then(() => api("POST", `/drafts/${d.id}/discard`)).then(load)} />)}</div>}
@@ -222,9 +263,10 @@ export function QuickAdd({ onSaved, onExit }: { onSaved: (t: Txn) => void; onExi
           {rec.state === "recording" && <div className="recording-gesture" role="status"><span className="recording-dot" /> {Math.floor(elapsed / 1000)}s <span>← Slide to cancel · release to send</span></div>}
           {err && <p role="alert" className="chat-notice chat-error">{err}</p>}
           {info && <p className="chat-notice" role="status">{info}</p>}
+          {reply && clock <= reply.expiresAt && <div className="chat-reply-context"><span>↪ Replying to ₹3,500 SuperMoney payment · {Math.max(0, Math.ceil((reply.expiresAt - clock) / 1000))}s left</span><button type="button" aria-label="Cancel reply" onClick={() => setReply(null)}>×</button></div>}
         </div>}
 
-        {photo ? <div className="photo-sendbar"><span>Receipt photo</span><button type="button" className="chat-send" aria-label="Send photo" disabled={photo.busy} onClick={() => void readReceipt()}>{photo.busy ? "…" : "➤"}</button></div> : <form className="chat-compose" onSubmit={(e) => { e.preventDefault(); if (text.trim() && !busy) void extractText(text.trim(), Date.now()); }}>
+        {photo ? <div className="photo-sendbar"><span>Receipt photo</span><button type="button" className="chat-send" aria-label="Send photo" disabled={photo.busy} onClick={() => void readReceipt()}>{photo.busy ? "…" : "➤"}</button></div> : <form className="chat-compose" onSubmit={(e) => { e.preventDefault(); if (text.trim() && !busy) void extractText(text.trim(), Date.now(), reply && Date.now() <= reply.expiresAt ? reply.draftId : undefined); }}>
           <div className="chat-attach-wrap"><button type="button" className="chat-tool chat-plus" aria-label="Open attachments" aria-expanded={attachMenu} title="Attach" onClick={() => setAttachMenu((open) => !open)}>＋</button>{attachMenu && <div className="chat-attach-menu" role="menu"><button type="button" role="menuitem" onClick={() => { setAttachMenu(false); document.getElementById("receipt-photo")?.click(); }}>Photos &amp; videos</button></div>}</div>
           <input id="receipt-photo" hidden type="file" accept="image/jpeg,image/png" capture="environment" onChange={(e) => { void pickPhoto(e.target.files?.[0]); e.target.value = ""; }} />
           <label className="sr-only" htmlFor="expense-message">Message</label>
@@ -239,6 +281,14 @@ export function QuickAdd({ onSaved, onExit }: { onSaved: (t: Txn) => void; onExi
       </div>
     </section>
   );
+}
+
+function DemoPaymentCard() {
+  return <div className="chat-payment-card" aria-label="Synthetic SuperMoney payment receipt demo">
+    <div className="chat-payment-head"><span>SuperMoney</span><b>DEMO</b></div>
+    <div className="chat-payment-check">✓</div><strong>Payment successful</strong><span>to {DEMO_PAYMENT.payee}</span><b className="chat-payment-amount">{DEMO_PAYMENT.amount}</b>
+    <div className="chat-payment-cashback">You earned ₹1.5 cashback</div><small>{DEMO_PAYMENT.time}</small><small>UPI ref · {DEMO_PAYMENT.reference}</small>
+  </div>;
 }
 
 function VoiceMessage({ url, durationMs, seed }: { url: string; durationMs: number; seed: number }) {
@@ -294,6 +344,7 @@ function DraftCard({ d, onChanged, onSaved, onReextract }: { d: Draft; onChanged
 
   return (
     <article className="txn draft" data-testid="draft" aria-label={`Draft ${e.description ?? ""}`}>
+      {d.demo && <p className="demo-draft-badge">Synthetic SuperMoney demo data · review before saving</p>}
       {d.source === "receipt" && (img ? <img src={img} alt="Receipt" className="receipt-view" /> : img === null ? <p className="muted">Original photo isn't on this device (it stays on the device that took it).</p> : null)}
       <div className="draft-main">
         <label className="big">Amount (₹)<input inputMode="decimal" value={e.amount ?? ""} onChange={(x) => set("amount", x.target.value || null)} /></label>

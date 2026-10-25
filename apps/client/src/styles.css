@@ -60,6 +60,8 @@ small { font-size: .75rem; }
 .screen-content { animation: screen-in .34s cubic-bezier(.2,.75,.25,1) both; }
 .screen-content > * { animation: card-in .44s cubic-bezier(.2,.75,.25,1) both; }
 .screen-content > *:nth-child(2) { animation-delay: .06s; }
+.tabs { display: grid; width: min(100%, 780px); grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.tab { justify-content: center; }
 
 .card { margin: 0 0 18px; padding: clamp(19px, 3vw, 28px); overflow: hidden; border: 1px solid var(--border); border-radius: 20px; background: linear-gradient(145deg, rgba(21, 31, 35, .96), rgba(15, 23, 27, .97)); box-shadow: var(--shadow), inset 0 1px rgba(255,255,255,.025); }
 .card > .row:first-child { align-items: center; margin-top: 0; }
@@ -314,6 +316,70 @@ button.chat-tool.record-tool:hover:not(:disabled) { border-color: rgba(127, 242,
 .photo-demo-note { position: absolute; right: 12px; bottom: 12px; padding: 4px 7px; border-radius: 5px; background: rgba(0,0,0,.55); color: #e1e8eb; font-size: .58rem; }
 .photo-sendbar { display: flex; min-height: 60px; flex: 0 0 auto; align-items: center; justify-content: flex-end; gap: 12px; padding: 8px 14px max(8px, env(safe-area-inset-bottom)); background: #0b141a; }
 .photo-sendbar > span { margin-right: auto; color: #c5d0d5; font-size: .77rem; }
+
+.chat-reply-context { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 12px; border-left: 3px solid #00a884; background: #17252a; color: #d6e5df; font-size: .73rem; }
+.chat-reply-context button, .chat-reply-link { border: 0; background: transparent; color: #8fe0c1; box-shadow: none; }
+.chat-reply-link { display: block; margin-top: 6px; padding: 3px 0; font-size: .68rem; }
+.chat-reply-link:hover { background: transparent; text-decoration: underline; }
+.chat-payment-card { display: grid; width: min(68vw, 300px); gap: 5px; padding: 12px; border: 1px solid rgba(255,255,255,.1); border-radius: 9px; background: #f5f7f9; color: #17212b; text-align: center; }
+.chat-payment-head { display: flex; justify-content: space-between; color: #556171; font-size: .63rem; font-weight: 700; }
+.chat-payment-head b { color: #237f60; letter-spacing: .12em; }
+.chat-payment-check { display: grid; width: 46px; height: 46px; place-items: center; justify-self: center; margin: 3px 0; border: 4px solid #a8e77b; border-radius: 13px; background: #39ce21; color: white; font-size: 1.8rem; font-weight: 800; box-shadow: inset 0 0 0 3px #72df53; }
+.chat-payment-card > strong { font-size: .86rem; }
+.chat-payment-card > span { color: #5b6571; font-size: .72rem; }
+.chat-payment-amount { margin: 5px 0; font-size: 1.55rem; }
+.chat-payment-cashback { padding: 7px; border-radius: 6px; background: #ecf9df; color: #3c9661; font-size: .72rem; font-weight: 700; }
+.chat-payment-card > small { color: #5d6773; font-size: .61rem; }
+.demo-draft-badge { margin: 0 0 9px; padding: 7px 9px; border: 1px solid rgba(245,200,121,.22); border-radius: 8px; background: rgba(245,200,121,.08); color: #f2d292; font-size: .68rem; }
+
+/* Screenshot-based SuperMoney share concept, using synthetic transaction data. */
+.supermoney-screen { display: grid; min-height: 620px; place-items: start center; padding: 4px 0 30px; }
+.sm-phone { display: flex; width: min(100%, 440px); min-height: 750px; flex-direction: column; align-items: center; padding: 17px 26px 22px; border: 1px solid #d9e0e5; border-radius: 30px; background: #f7f8fa; color: #1d2937; box-shadow: 0 22px 65px rgba(0,0,0,.27); animation: card-in .44s cubic-bezier(.2,.75,.25,1) both; }
+.sm-status { display: flex; width: 100%; justify-content: space-between; padding: 0 18px; color: #15202c; font-size: .84rem; font-weight: 700; }
+.sm-toolbar { display: flex; width: 100%; align-items: center; justify-content: space-between; margin: 20px 0 10px; }
+.sm-toolbar button { min-width: 42px; min-height: 40px; padding: 5px; background: transparent; color: #536172; box-shadow: none; font-size: 1.5rem; }
+.sm-toolbar button:hover { background: #e9edf0; box-shadow: none; }
+.sm-demo { padding: 5px 8px; border-radius: 999px; background: #eaf7ed; color: #30864d; font-size: .53rem; font-weight: 800; letter-spacing: .13em; }
+.sm-success-icon { display: grid; width: 112px; height: 112px; place-items: center; margin: 52px 0 31px; border: 7px double #9be77b; border-radius: 25px; background: linear-gradient(145deg, #63ea35, #27c915); color: white; box-shadow: inset 0 0 0 8px rgba(21,187,10,.55), 0 9px 22px rgba(63,198,39,.2); }
+.sm-success-icon span { font-size: 4.7rem; font-weight: 300; line-height: 1; }
+.sm-phone h2 { color: #1d2937; font-size: 1.32rem; letter-spacing: -.03em; }
+.sm-to { margin: 3px 0 20px; color: #576170; font-size: 1.08rem; }
+.sm-amount { color: #172333; font-size: 3rem; letter-spacing: -.055em; }
+.sm-cashback { display: flex; width: 100%; align-items: center; gap: 13px; margin: 48px 0 26px; padding: 14px; border-radius: 9px; background: #f0fadf; color: #4aa46a; font-size: .9rem; font-weight: 750; }
+.sm-date, .sm-utr { margin: 5px 0; color: #505a68; font-size: .86rem; }
+.sm-details { margin: 28px 0 auto; padding: 4px 2px; border: 0; border-bottom: 1px solid currentColor; border-radius: 0; background: transparent; color: #172333; box-shadow: none; font-weight: 700; }
+.sm-details:hover { background: transparent; box-shadow: none; }
+.sm-actions { display: grid; width: 100%; grid-template-columns: 1fr 1fr; gap: 14px; margin: 32px 0 26px; }
+.sm-actions button { min-height: 58px; border-color: #d5dae0; background: white; color: #303b49; box-shadow: none; font-size: .98rem; font-weight: 700; }
+.sm-actions button + button { border-color: #b9e98b; background: #c5ed96; color: #243b1f; }
+.sm-powered { display: flex; align-items: center; gap: 9px; color: #89919c; font-size: .58rem; }
+.sm-powered b { color: #475d93; font-size: .69rem; }.sm-powered i { width: 1px; height: 15px; background: #d2d7dc; }
+.sm-overlay { position: fixed; z-index: 70; inset: 0; display: flex; align-items: end; justify-content: center; padding: 12px; background: rgba(3,8,12,.58); backdrop-filter: blur(5px); animation: sm-fade .2s ease both; }
+.sm-sheet { width: min(100%, 560px); padding: 11px 20px max(20px, env(safe-area-inset-bottom)); border: 1px solid rgba(255,255,255,.1); border-radius: 27px 27px 18px 18px; background: #24272b; color: #f2f4f5; box-shadow: 0 -14px 60px rgba(0,0,0,.32); animation: sm-sheet-in .3s cubic-bezier(.22,.8,.22,1) both; }
+.sm-grabber { width: 44px; height: 4px; margin: 0 auto 13px; border-radius: 4px; background: #6b6f73; }
+.sm-sheet-head { display: flex; min-height: 48px; align-items: center; justify-content: space-between; gap: 12px; }.sm-sheet-head strong { font-size: 1.02rem; }
+.sm-sheet-head button { min-width: 38px; min-height: 38px; border-radius: 50%; background: #3a3d40; color: #f5f5f5; box-shadow: none; font-size: 1.35rem; }
+.sm-share-preview { display: flex; align-items: center; gap: 12px; margin: 15px 0 22px; padding: 12px; border-radius: 15px; background: #32363a; }
+.sm-mini-check { display: grid; width: 43px; height: 43px; flex: 0 0 auto; place-items: center; border-radius: 12px; background: #42d52d; color: white; font-size: 1.6rem; font-weight: 800; }
+.sm-share-preview > div:nth-child(2) { display: grid; flex: 1; gap: 3px; }.sm-share-preview > div:nth-child(2) strong { font-size: .82rem; }
+.sm-share-preview > div:nth-child(2) span, .sm-file { color: #b5babd; font-size: .68rem; }
+.sm-section-label { margin: 19px 3px 11px; color: #9ca1a5; font-size: .65rem; font-weight: 750; letter-spacing: .1em; }
+.sm-share-targets { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }.sm-share-targets button { display: grid; justify-items: center; gap: 8px; min-width: 0; min-height: 100px; padding: 8px 3px; border: 0; background: transparent; color: #e8ebed; box-shadow: none; font-size: .68rem; }
+.sm-share-targets button:hover { background: #34383b; box-shadow: none; }.sm-app-icon { display: grid; width: 55px; height: 55px; place-items: center; border-radius: 17px; color: white; font-size: 1.4rem; font-weight: 800; box-shadow: 0 5px 13px rgba(0,0,0,.25); }
+.whatsapp-icon { background: #20c76a; }.messages-icon { background: #558fe6; }.mail-icon { background: #db6280; }.more-icon { background: #454b52; }
+.sm-share-actions { display: flex; justify-content: space-around; margin: 14px -4px 0; padding-top: 14px; border-top: 1px solid #42464a; }.sm-share-actions button { border: 0; background: transparent; color: #d8dcdf; box-shadow: none; font-size: .76rem; }
+.sm-contact-sheet { padding-bottom: max(25px, env(safe-area-inset-bottom)); }.sm-close { font-size: 1.65rem !important; }.sm-group { width: auto; padding: 0 13px; border-radius: 999px !important; font-size: .72rem !important; }
+.sm-search { display: flex; align-items: center; gap: 9px; margin: 10px 0 17px; padding: 10px 13px; border-radius: 999px; background: #3b3e41; color: #e8eaec; font-size: 1.15rem; }.sm-search span { color: #c3c6c8; font-size: .82rem; }
+.sm-contact { display: flex; width: 100%; align-items: center; gap: 12px; padding: 10px; border: 0; border-radius: 14px; background: #303337; color: #f3f4f5; text-align: left; box-shadow: none; }.sm-contact:hover { background: #383c40; box-shadow: none; }
+.sm-contact-avatar { display: grid; width: 46px; height: 46px; place-items: center; border-radius: 50%; background: #62567b; font-weight: 700; }.sm-contact > span:nth-child(2) { display: grid; flex: 1; gap: 3px; }.sm-contact strong { font-size: .84rem; font-weight: 550; }.sm-contact small { color: #aeb3b8; font-size: .67rem; }
+.sm-contact i { display: grid; width: 22px; height: 22px; place-items: center; border: 1.5px solid #899095; border-radius: 50%; color: #163a28; font-style: normal; }.sm-contact.selected i { border-color: #47d474; background: #47d474; font-weight: 800; }
+.sm-message-preview { display: flex; align-items: center; gap: 9px; margin: 15px 0 10px; padding: 10px; border-radius: 15px; background: #3a3d41; }.sm-message-preview textarea { min-width: 0; min-height: 75px; flex: 1; resize: vertical; border: 0; outline: 0; background: transparent; color: white; font-size: .78rem; }
+.sm-demo-thumb { display: grid; width: 62px; height: 62px; place-items: center; border-radius: 8px; background: #f4f6f7; color: #258550; font-size: .48rem; font-weight: 800; text-align: center; }
+.sm-send-row { display: flex; align-items: center; justify-content: space-between; padding: 9px 2px; color: #e8eaec; font-size: .85rem; }.sm-send-row button { border: 0; background: transparent; color: #70d58d; box-shadow: none; font-size: .91rem; font-weight: 700; }.sm-send-row button:disabled { color: #7d8981; opacity: .6; }
+.sm-send-row button span { display: inline-grid; width: 31px; height: 31px; place-items: center; margin-left: 7px; border-radius: 50%; background: #00a884; color: #092d25; }.sm-disclaimer { display: block; color: #9ca1a5; font-size: .63rem; text-align: center; }
+@keyframes sm-fade { from { opacity: 0; } to { opacity: 1; } } @keyframes sm-sheet-in { from { opacity: .6; transform: translateY(34px) scale(.985); } to { opacity: 1; transform: translateY(0) scale(1); } }
+@media (prefers-reduced-motion: reduce) { .sm-overlay, .sm-sheet { animation-duration: .01ms; } }
+@media (max-width: 700px) { .tab { padding: 7px 5px; font-size: .75rem; } .supermoney-screen { min-height: auto; margin: 0 -12px; } .sm-phone { min-height: min(760px, calc(100dvh - 135px)); padding: 15px 21px; border-radius: 22px; } .sm-success-icon { margin-top: 36px; } .sm-cashback { margin-top: 34px; } }
 @media (max-width: 700px) {
   .whatsapp-chat .chat-topbar { flex-basis: 60px; padding-right: 10px; padding-left: 8px; }
   .whatsapp-chat .chat-wall { padding: 12px 10px 8px; }

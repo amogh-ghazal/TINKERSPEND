@@ -2,15 +2,14 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { currentUser, renderWebSignIn, signInNative } from "./lib/auth";
 import { thisMonth } from "./lib/format";
 import type { Me } from "./lib/types";
-import { Capture, isNative } from "./native";
-import { CaptureStatusPanel } from "./screens/CaptureStatusPanel";
+import { isNative } from "./native";
 import { Ledger } from "./screens/Ledger";
 import { Overview } from "./screens/Overview";
 import { Settings } from "./screens/Settings";
-import { TxnForm } from "./screens/TxnForm";
 import { QuickAdd } from "./screens/QuickAdd";
+import { SuperMoney } from "./screens/SuperMoney";
 
-type Tab = "overview" | "whatsapp" | "ledger" | "review" | "add" | "capture" | "account";
+type Tab = "overview" | "whatsapp" | "supermoney" | "review" | "account";
 
 export function App() {
   const [me, setMe] = useState<Me | null | undefined>(undefined);
@@ -37,11 +36,10 @@ function SignIn({ onUser }: { onUser: (u: Me) => void }) {
 
 function Home({ me, onSignedOut }: { me: Me; onSignedOut: () => void }) {
   const [tab, setTab] = useState<Tab>("overview");
-  useEffect(() => {
-    if (isNative) Capture.getStatus().then((s) => { if (!s.automaticSources) setTab("capture"); }).catch(() => setTab("capture"));
-  }, []);
   const [month, setMonth] = useState(thisMonth(me.timezone));
   const [rev, setRev] = useState(0);
+  const [sharedPayment, setSharedPayment] = useState(0);
+  const [handledPayment, setHandledPayment] = useState(0);
   const bump = useCallback(() => setRev((r) => r + 1), []);
   useEffect(() => {
     const refresh = () => { if (tab === "overview" && document.visibilityState === "visible") bump(); };
@@ -50,7 +48,7 @@ function Home({ me, onSignedOut }: { me: Me; onSignedOut: () => void }) {
     return () => { document.removeEventListener("visibilitychange", refresh); window.clearInterval(timer); };
   }, [tab, bump]);
   const inWhatsApp = tab === "whatsapp";
-  const tabs: [Tab, string][] = [["overview", "Overview"], ["whatsapp", "WhatsApp"], ["ledger", "Transactions"], ["review", "Review"], ["add", "Add"], ...(isNative ? [["capture", "Capture"] as [Tab, string]] : []), ["account", "Account"]];
+  const tabs: [Tab, string][] = [["overview", "Overview"], ["whatsapp", "WhatsApp"], ["supermoney", "SuperMoney"], ["review", "Review"], ["account", "Account"]];
   return (
     <main className={`container app-shell${inWhatsApp ? " whatsapp-mode" : ""}`}>
       {!inWhatsApp && <header className="app-header">
@@ -61,13 +59,12 @@ function Home({ me, onSignedOut }: { me: Me; onSignedOut: () => void }) {
         <div className="privacy-pill"><span className="privacy-dot" />Private workspace</div>
         <p className="header-copy">A clearer picture of where your money goes.</p>
       </header>}
-      {!inWhatsApp && <nav className="tabs" aria-label="Sections">{tabs.map(([t, l], i) => <button key={t} className={`tab${tab === t ? " active" : ""}`} aria-current={tab === t ? "page" : undefined} onClick={() => setTab(t)}><span>{l}</span><small>{String(i + 1).padStart(2, "0")}</small></button>)}</nav>}
+      {!inWhatsApp && <nav className="tabs" aria-label="Sections">{tabs.map(([t, l], i) => <button key={t} className={`tab${tab === t ? " active" : ""}`} aria-current={tab === t ? "page" : undefined} onClick={() => setTab(t)}><span>{l}</span><small aria-hidden="true">{String(i + 1).padStart(2, "0")}</small></button>)}</nav>}
       <div className={inWhatsApp ? "whatsapp-content" : "screen-content"} key={tab}>
         {tab === "overview" && <Overview key={rev} month={month} setMonth={setMonth} onOpenReview={() => setTab("review")} />}
-        {tab === "whatsapp" && <QuickAdd onExit={() => setTab("overview")} onSaved={(t) => { setMonth(t.effective_local_date.slice(0, 7)); bump(); }} />}
-        {(tab === "ledger" || tab === "review") && <Ledger key={`${tab}-${rev}`} month={month} reviewOnly={tab === "review"} onChanged={bump} timezone={me.timezone} />}
-        {tab === "add" && <section className="card"><h2>Add expense</h2><TxnForm key={rev} onDone={(t) => { setMonth(t.effective_local_date.slice(0, 7)); bump(); setTab("ledger"); }} /></section>}
-        {tab === "capture" && <CaptureStatusPanel />}
+        {tab === "whatsapp" && <QuickAdd shareToken={sharedPayment > handledPayment ? sharedPayment : 0} onShareHandled={(token) => setHandledPayment((n) => Math.max(n, token))} onExit={() => setTab("overview")} onSaved={(t) => { setMonth(t.effective_local_date.slice(0, 7)); bump(); }} />}
+        {tab === "supermoney" && <SuperMoney onShare={() => { setSharedPayment((n) => n + 1); setTab("whatsapp"); }} />}
+        {tab === "review" && <Ledger key={`${tab}-${rev}`} month={month} reviewOnly onChanged={bump} timezone={me.timezone} />}
         {tab === "account" && <Settings me={me} onSignedOut={onSignedOut} />}
       </div>
     </main>

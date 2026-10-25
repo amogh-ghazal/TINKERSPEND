@@ -28,10 +28,9 @@ test("captured payment shows bank/time; purpose and duplicate confirmation prese
   await form.getByLabel("What was it for?").fill("Dinner with friends");
   await form.getByRole("button", { name: "Save purpose" }).click();
   await expect(page.getByTestId("txn")).toHaveCount(0);
-  await page.getByRole("button", { name: "Transactions", exact: true }).click();
-  await expect(page.getByTestId("txn")).toHaveCount(1);
-  await expect(page.getByTestId("txn")).toContainText("Dinner with friends");
-  await expect(page.getByTestId("txn")).toContainText("Food & drinks");
+  const persisted = await page.evaluate(async () => await (await fetch(`/api/v1/transactions?month=${new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata", year: "numeric", month: "2-digit" }).format(new Date()).replace("/", "-")}`)).json());
+  expect(persisted.items).toHaveLength(1);
+  expect(persisted.items[0]).toMatchObject({ description: "Dinner with friends", allocations: [{ category_id: "food_drinks" }] });
   await page.getByRole("button", { name: "Overview", exact: true }).click();
   await expect(page.getByTestId("gross")).toHaveText("₹250.00");
   const duplicateStatus = await page.evaluate(async ({ token, install }) => {

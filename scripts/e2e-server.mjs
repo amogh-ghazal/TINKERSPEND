@@ -18,7 +18,7 @@ function run(args) {
   if (result.status !== 0) process.exit(result.status ?? 1);
 }
 run(["d1", "migrations", "apply", "DB", "--local", "--persist-to", quoted(persist)]);
-const emails = ["owner", "owner-desktop", "owner-mobile", "tester", "drafts-desktop", "drafts-mobile", "capture-desktop", "capture-mobile"];
+const emails = ["owner", "owner-desktop", "owner-mobile", "tester", "drafts-desktop", "drafts-mobile", "capture-desktop", "capture-mobile", "supermoney-desktop", "supermoney-mobile"];
 const sql = `INSERT INTO allowlist (email, added_at) VALUES ${emails.map((e) => `('${e}@e2e.test',0)`).join(",")}`;
 run(["d1", "execute", "DB", "--local", "--persist-to", quoted(persist), "--command", quoted(sql)]);
 const server = spawn(runner, ["exec", "wrangler", "dev", "--local", "--persist-to", quoted(persist), "--port", "8787", "--ip", "127.0.0.1",

@@ -2,6 +2,12 @@
 
 _Status legend: **implemented** (code exists), **tested** (automated/manual evidence recorded), **failed**, **not tested**._
 
+## Latest — 25 October 2026, SuperMoney share and contextual chat reply
+
+The primary navigation now follows the five sections on the paper flow chart. The SuperMoney tab recreates the supplied payment-success and share-sheet sequence using synthetic sample data, then opens the WhatsApp-style TinkerSpend chat concept with a ₹3,500 review draft. A reply during the 30-second window carries the target draft ID through the authenticated API and updates that expense instead of creating a second one. Clear purposes receive an existing deterministic category; unclear purposes remain for review. A voice reply is transcribed once and linked to the same draft without a second extraction call. The chat flow still labels the contact and payment as demo data and never sends a real WhatsApp message or payment.
+
+Verified locally: 68 domain tests, 51 API tests with mocked OpenAI, 20 Playwright browser tests across desktop and mobile, lint, typecheck and production deploy-safety checks pass. The SuperMoney demo endpoint and typed reply path make no OpenAI requests; voice tests mock transcription. **No real OpenAI credits were used.** Deployed Cloudflare Worker version `60bd1be2-27c7-4fdb-891f-bed57caf65bd` to `https://expenses.tinkercraft.in`; production homepage returned 200 and `/api/v1/health` returned `{ "ok": true, "env": "production", "d1_ms": 22 }`. This confirms the app is live, not real Meta/WhatsApp delivery, live Google sign-in or physical-phone capture.
+
 ## Latest — 25 October 2026, full-screen chat interaction
 
 The chat is now a dedicated full-viewport `WhatsApp` tab with a one-line composer and separate photo preview/send flow. Voice messages use press-and-hold, release-to-send and left-swipe-to-delete; sent photos/voice notes appear as media bubbles with playback. It remains visibly identified as a TinkerSpend concept demo. Existing authenticated draft endpoints and explicit review-before-save behavior are retained. Production build and deploy-safety guard passed; Cloudflare reports version `ce4f7d79-5f94-4536-9ca2-71ef85ad34d2` deployed at `https://expenses.tinkercraft.in`. No runtime/API tests or OpenAI calls were made at the owner's request.

@@ -1,5 +1,12 @@
 # Change log
 
+## 2026-10-25 — SuperMoney share-to-chat flow
+
+- Changed: aligned the top-level navigation with the paper flow chart (Overview, WhatsApp, SuperMoney, Review, Account) and added a screenshot-based SuperMoney payment-success view, animated share sheet, WhatsApp contact picker and editable outgoing message.
+- Interaction: sending the synthetic demo receipt opens the full-screen TinkerSpend chat concept, creates a reviewable ₹3,500 sample draft, and asks what the payment was for. A typed reply within 30 seconds updates that exact draft and applies a deterministic category when clear; otherwise it remains uncategorized for review. A voice reply is tied to the same draft and runs transcription without a second expense-extraction request. Saving still requires review and explicit paid confirmation.
+- Privacy/cost: the payee is labeled demo, the UPI reference is synthetic and no real WhatsApp message or SuperMoney payment is sent. The demo draft and typed purpose link make no OpenAI calls; voice may use the existing transcription API only after the owner sends a recording. Automated API responses were mocked and browser tests used local D1, so no OpenAI credits were consumed.
+- Validation: 68 domain tests, 51 local API tests (mocked OpenAI), 20 desktop/mobile browser tests, lint, typecheck and production deployment-safety guard pass. Deployed Cloudflare Worker version `60bd1be2-27c7-4fdb-891f-bed57caf65bd` to `https://expenses.tinkercraft.in`; homepage and production D1 health checks returned 200/healthy. No live OpenAI calls were made.
+
 ## 2026-10-25 — Full-screen WhatsApp-style chat demo
 
 - Changed: moved chat into a dedicated full-viewport `WhatsApp` tab, removed the “expense assistant” headline and example chips, and replaced the scrolling textarea with a one-line message composer. The interface uses familiar dark chat cues while visibly identifying itself as a TinkerSpend concept demo.
