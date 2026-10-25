@@ -2,6 +2,12 @@
 
 _Status legend: **implemented** (code exists), **tested** (automated/manual evidence recorded), **failed**, **not tested**._
 
+## Demo readiness and OpenAI secret — 25 October 2026
+
+The beginner-oriented README now contains the live demo path, screenshots, architecture, local commands, explicit prototype boundaries and private OpenAI key instructions. The SuperMoney payment/share/chat screenshots are checked in under `docs/evidence/screenshots/` and are labelled synthetic. Latest local verification: lint/typecheck, 68 domain tests, 51 API tests (OpenAI mocked), 20 desktop/mobile Playwright tests and 12 deploy-safety checks passed. The production homepage and `/api/v1/health` are healthy. No live provider call was made and no credits were consumed.
+
+`wrangler secret list --env production` returned an empty list before key setup; local `apps/api/.dev.vars` is absent. Therefore the OpenAI API integration is guarded and mock-tested but live receipt extraction and voice transcription are not configured/verified. Wrangler is open at the interactive `OPENAI_API_KEY` production-secret prompt; owner entry and successful save are still pending. Since the key was shared in chat, the saved report recommends revoking it and entering a replacement. No key value is recorded in this repository.
+
 ## Latest — 25 October 2026, SuperMoney share and contextual chat reply
 
 The primary navigation now follows the five sections on the paper flow chart. The SuperMoney tab recreates the supplied payment-success and share-sheet sequence using synthetic sample data, then opens the WhatsApp-style TinkerSpend chat concept with a ₹3,500 review draft. A reply during the 30-second window carries the target draft ID through the authenticated API and updates that expense instead of creating a second one. Clear purposes receive an existing deterministic category; unclear purposes remain for review. A voice reply is transcribed once and linked to the same draft without a second extraction call. The chat flow still labels the contact and payment as demo data and never sends a real WhatsApp message or payment.

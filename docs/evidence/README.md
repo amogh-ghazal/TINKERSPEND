@@ -1,5 +1,13 @@
 # Evidence index
 
+## SuperMoney-to-chat demo checkpoint — 25 October 2026
+
+[Demo readiness report](demo-readiness-2026-10-25.md): the live web deployment returns healthy, and the latest local check passes lint, typecheck, 68 domain tests, 51 API tests (OpenAI mocked), 20 desktop/mobile browser tests and 12 deployment-safety cases. No OpenAI request was made. The production Worker has no configured secrets, so live OpenAI-backed receipt extraction and voice transcription are not ready until a replacement key is safely added by the owner. These screenshots are generated from local Playwright fixtures and are synthetic, not actual WhatsApp/SuperMoney integrations or live AI results.
+
+- [Payment success](screenshots/supermoney-payment-demo.png)
+- [Share sheet](screenshots/supermoney-share-sheet.png)
+- [Shared to TinkerSpend chat with purpose question](screenshots/supermoney-shared-to-chat.png)
+
 ## 0.2.0 automatic capture — 25 October 2026
 
 [Latest report](codex-020-automatic-capture.md): 68 domain, 48 API, 20 browser, 8 native and 12 deployment-guard cases pass. Current visible alerts and subsequent alerts capture with no selected sources; automatic-mode lifecycle/local-sync checks pass. Includes the concurrent-edit regression fix, bank/time metadata, purpose/duplicate confirmation and actual static CSP enforcement. [Actual native review screenshot](screenshots/android-020-payment.png) contains synthetic data only. Real-phone/live-service/deployment gates remain pending.

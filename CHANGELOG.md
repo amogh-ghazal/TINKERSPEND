@@ -1,5 +1,12 @@
 # Change log
 
+## 2026-10-25 — Demo readiness documentation and screenshots
+
+- Reworked the README into a concise demo guide with the presentation path, architecture, setup, test commands, API-key handling and explicit boundaries around the WhatsApp/SuperMoney concept screens.
+- Added three checked-in synthetic screenshots and a dated evidence report. The images are from the local browser fixture flow, not live third-party apps or real AI results.
+- Confirmed API tests are mocked and no provider request was made. The production Worker has no secrets configured; live OpenAI processing remains unavailable until the owner replaces the key shared in chat and configures the replacement privately.
+- Latest checks: lint, typecheck, 68 domain, 51 API, 20 desktop/mobile browser and 12 deployment-safety tests passed. Production API health is healthy. No credits were used.
+
 ## 2026-10-25 — SuperMoney share-to-chat flow
 
 - Changed: aligned the top-level navigation with the paper flow chart (Overview, WhatsApp, SuperMoney, Review, Account) and added a screenshot-based SuperMoney payment-success view, animated share sheet, WhatsApp contact picker and editable outgoing message.
