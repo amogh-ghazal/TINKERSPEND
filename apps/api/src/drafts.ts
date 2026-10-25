@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { z } from "zod";
 import { allocateProportionally, reconcileReceipt, suggestMatches, CATEGORIES, CATEGORY_IDS, isValidIsoDate, isValidTimeZone, localDateOf, paiseToDecimalString, parseExpenseStatement, parseRupeesToPaise, resolveRelativeDate, categoryForDescription, type CategoryId, type StatementDraft } from "@tinkerspend/domain";
-import { DraftCommit, DraftEntry, DraftPatch, LIMITS, MediaDraftRequest, ReceiptDraftRequest, TextDraftRequest } from "@tinkerspend/contracts";
+import { DemoPaymentDraftRequest, DraftCommit, DraftEntry, DraftPatch, LIMITS, MediaDraftRequest, ReceiptDraftRequest, TextDraftRequest } from "@tinkerspend/contracts";
 import type { AppVars, AuthedUser, Env } from "./env";
 import { ApiError, now, parseJson, sha256Hex, uuid } from "./util";
 import { callResponses, claimOperation, finishOp, reserveQuota, secondsToUtcMidnight, type OpRow } from "./ai";
@@ -14,7 +14,7 @@ const AUDIO_TYPES: Record<string, string> = { "audio/mp4": "m4a", "audio/m4a": "
 
 type Entry = z.infer<typeof DraftEntry>;
 interface ReceiptMeta { merchant: string | null; taxes_paise: number[]; fees_paise: number[]; discounts_paise: number[]; image_sha256: string; duplicate_of: string | null }
-interface Payload { entry: Entry; assumptions: string[]; extraction: "ai" | "deterministic"; input_text?: string; transcript?: string; edited?: string[]; receipt?: ReceiptMeta }
+interface Payload { entry: Entry; assumptions: string[]; extraction: "ai" | "deterministic"; input_text?: string; transcript?: string; purpose_note?: string; demo?: boolean; edited?: string[]; receipt?: ReceiptMeta }
 export const RECEIPT_SCHEMA_VERSION = "receipt-v1";
 const paiseOf = (s: string | null | undefined) => { if (!s) return null; const r = parseRupeesToPaise(s); return r.ok && r.paise > 0 ? r.paise : null; };
 const RECEIPT_ASSUMPTIONS = ["receipt_mismatch", "line_amount_missing"];
@@ -187,7 +187,8 @@ function presentDraft(r: DraftRow) {
   const p = JSON.parse(r.payload) as Payload;
   return { id: r.id, source: r.source, status: r.status, version: r.version, reference_at: r.reference_at, timezone: r.timezone, committed_transaction_id: r.committed_txn_id, created_at: r.created_at, expires_at: r.expires_at,
     entry: p.entry, assumptions: p.assumptions ?? [], extraction: p.extraction, input_text: p.input_text ?? null, transcript: p.transcript ?? null,
-    receipt: p.receipt ? { merchant: p.receipt.merchant, taxes: p.receipt.taxes_paise.map(paiseToDecimalString), fees: p.receipt.fees_paise.map(paiseToDecimalString), discounts: p.receipt.discounts_paise.map(paiseToDecimalString), duplicate_of: p.receipt.duplicate_of } : null };
+    receipt: p.receipt ? { merchant: p.receipt.merchant, taxes: p.receipt.taxes_paise.map(paiseToDecimalString), fees: p.receipt.fees_paise.map(paiseToDecimalString), discounts: p.receipt.discounts_paise.map(paiseToDecimalString), duplicate_of: p.receipt.duplicate_of } : null,
+    purpose_note: p.purpose_note ?? null, demo: p.demo ?? false };
 }
 
 async function loadDrafts(db: D1Database, userId: string, ids: string[]) {
@@ -197,7 +198,7 @@ async function loadDrafts(db: D1Database, userId: string, ids: string[]) {
   return ids.map((id) => byId.get(id)).filter((r): r is DraftRow => !!r).map(presentDraft);
 }
 
-export async function saveDrafts(db: D1Database, u: AuthedUser, source: "text" | "voice" | "receipt", ref: number, tz: string, items: { entry: Entry; assumptions: string[]; receipt?: ReceiptMeta }[], method: "ai" | "deterministic", extra: { input_text?: string; transcript?: string }) {
+export async function saveDrafts(db: D1Database, u: AuthedUser, source: "text" | "voice" | "receipt", ref: number, tz: string, items: { entry: Entry; assumptions: string[]; receipt?: ReceiptMeta }[], method: "ai" | "deterministic", extra: { input_text?: string; transcript?: string; demo?: boolean }) {
   const ts = now();
   const list = items.length ? items : [{ entry: { amount: null, currency: "INR", effective_local_date: localDateOf(ref, tz), counterparty: null, description: null, kind: "expense", payment_status: "successful", category_id: null, line_items: [] } as Entry, assumptions: ["nothing_extracted"] }];
   const ids = list.map(() => uuid());
@@ -216,14 +217,52 @@ async function replay(db: D1Database, userId: string, row: OpRow) {
 
 export const drafts = new Hono<AppVars>();
 
+function checkReplyTarget(r: DraftRow, referenceTime: number) {
+  if (r.status !== "open") throw new ApiError(409, "conflict", "That expense is no longer awaiting a reply");
+  if (referenceTime < r.created_at - 5_000 || referenceTime > r.created_at + 30_000) throw new ApiError(409, "conflict", "The 30-second reply window has passed. Open the expense from Review to edit it.");
+}
+
+async function attachPurpose(db: D1Database, u: AuthedUser, r: DraftRow, purpose: string) {
+  const clean = purpose.trim().slice(0, 500);
+  if (!clean) throw new ApiError(422, "validation_failed", "Reply with a short purpose for this payment");
+  const p = JSON.parse(r.payload) as Payload;
+  const category = categoryForDescription(clean);
+  const entry = { ...p.entry, description: clean, category_id: category ?? p.entry.category_id };
+  const next: Payload = { ...p, entry, purpose_note: clean };
+  const up = await db.prepare("UPDATE drafts SET payload = ?, version = version + 1 WHERE id = ? AND user_id = ? AND version = ? AND status = 'open'").bind(JSON.stringify(next), r.id, u.id, r.version).run();
+  if (!up.meta.changes) throw new ApiError(409, "version_conflict", "That expense changed elsewhere; reload it before replying");
+  return presentDraft({ ...r, payload: JSON.stringify(next), version: r.version + 1 });
+}
+
+drafts.post("/drafts/demo-payment", async (c) => {
+  const u = c.get("user");
+  const db = c.env.DB;
+  const b = await parseJson(c, DemoPaymentDraftRequest, 2048);
+  const tz = checkReference(b.reference_time, b.timezone, u);
+  const inputHash = await sha256Hex(JSON.stringify({ v: "supermoney-share-demo-v1", ref: b.reference_time, tz }));
+  const claim = await claimOperation(db, u.id, b.operation_id, "text_extract", null, inputHash, "supermoney-share-demo-v1");
+  if (!claim.claimed) return replay(db, u.id, claim.row);
+  const item = { entry: { amount: "3500.00", currency: "INR", effective_local_date: "2026-10-23", counterparty: "Vineesh (demo)", description: "SuperMoney payment · purpose not added", kind: "expense", payment_status: "successful", category_id: "uncategorized", line_items: [] } as Entry, assumptions: [] };
+  const ids = await saveDrafts(db, u, "text", b.reference_time, tz, [item], "deterministic", { demo: true });
+  await finishOp(db, u.id, b.operation_id, "succeeded", { result: { draft_ids: ids, method: "deterministic", note: null } });
+  return c.json({ status: "succeeded", method: "deterministic", note: null, drafts: await loadDrafts(db, u.id, ids) }, 201);
+});
+
 drafts.post("/drafts/text", async (c) => {
   const u = c.get("user");
   const db = c.env.DB;
   const b = await parseJson(c, TextDraftRequest, 16 * 1024);
   const tz = checkReference(b.reference_time, b.timezone, u);
-  const inputHash = await sha256Hex(JSON.stringify({ v: EXTRACT_SCHEMA_VERSION, text: b.text, ref: b.reference_time, tz }));
+  const replyTarget = b.reply_to_draft_id ? await openDraft(db, u.id, b.reply_to_draft_id) : null;
+  if (replyTarget) checkReplyTarget(replyTarget, b.reference_time);
+  const inputHash = await sha256Hex(JSON.stringify({ v: EXTRACT_SCHEMA_VERSION, text: b.text, ref: b.reference_time, tz, reply_to_draft_id: b.reply_to_draft_id ?? null }));
   const claim = await claimOperation(db, u.id, b.operation_id, "text_extract", null, inputHash, EXTRACT_SCHEMA_VERSION);
   if (!claim.claimed) return replay(db, u.id, claim.row);
+  if (replyTarget) {
+    const draft = await attachPurpose(db, u, replyTarget, b.text);
+    await finishOp(db, u.id, b.operation_id, "succeeded", { result: { draft_ids: [replyTarget.id], method: "linked", note: null } });
+    return c.json({ status: "succeeded", method: "linked", note: null, drafts: [draft] }, 200);
+  }
   const x = await extract(c.env, u, b.text, b.reference_time, tz);
   const ids = await saveDrafts(db, u, "text", b.reference_time, tz, x.items, x.method, { input_text: b.text.slice(0, 1000) });
   await finishOp(db, u.id, b.operation_id, x.status, { result: { draft_ids: ids, method: x.method, note: x.note }, error_code: x.note ?? undefined, model: x.model, usage: x.usage, request_id: x.requestId });
@@ -235,6 +274,8 @@ drafts.post("/drafts/voice", async (c) => {
   const db = c.env.DB;
   const b = await parseJson(c, MediaDraftRequest, Math.ceil((LIMITS.audioBytes * 4) / 3) + 4096);
   const tz = checkReference(b.reference_time, b.timezone, u);
+  const replyTarget = b.reply_to_draft_id ? await openDraft(db, u.id, b.reply_to_draft_id) : null;
+  if (replyTarget) checkReplyTarget(replyTarget, b.reference_time);
   const mime = b.mime_type.split(";")[0]!.trim().toLowerCase();
   const ext = AUDIO_TYPES[mime];
   if (!ext) throw new ApiError(415, "validation_failed", "Unsupported audio format", false, undefined, { mime_type: "unsupported" });
@@ -247,7 +288,7 @@ drafts.post("/drafts/voice", async (c) => {
   if (!c.env.OPENAI_API_KEY) throw new ApiError(503, "upstream_unavailable", "Voice transcription is not configured; your recording was not uploaded", true, 3600);
 
   const audioHash = await sha256Hex(b.data_base64);
-  const inputHash = await sha256Hex(JSON.stringify({ v: EXTRACT_SCHEMA_VERSION, audioHash, ref: b.reference_time, tz }));
+  const inputHash = await sha256Hex(JSON.stringify({ v: EXTRACT_SCHEMA_VERSION, audioHash, ref: b.reference_time, tz, reply_to_draft_id: b.reply_to_draft_id ?? null }));
   const claim = await claimOperation(db, u.id, b.operation_id, "voice", null, inputHash, EXTRACT_SCHEMA_VERSION);
   if (!claim.claimed) return replay(db, u.id, claim.row);
   const q = await reserveQuota(db, u.id, "voice", Number(c.env.AI_USER_VOICE_LIMIT ?? "20"), Number(c.env.AI_DAILY_GLOBAL_LIMIT ?? "100"));
@@ -285,6 +326,11 @@ drafts.post("/drafts/voice", async (c) => {
     const ids = await saveDrafts(db, u, "voice", b.reference_time, tz, [], "deterministic", { transcript: "" });
     await finishOp(db, u.id, b.operation_id, "needs_review", { error_code: "empty_transcript", model, usage, request_id: requestId, result: { draft_ids: ids, transcript: "", method: "deterministic", note: "empty_transcript" } });
     return c.json({ status: "needs_review", note: "empty_transcript", transcript: "", drafts: await loadDrafts(db, u.id, ids) }, 201);
+  }
+  if (replyTarget) {
+    const draft = await attachPurpose(db, u, replyTarget, transcript);
+    await finishOp(db, u.id, b.operation_id, "succeeded", { result: { draft_ids: [replyTarget.id], transcript, method: "linked", note: null }, model, usage: { transcribe: usage }, request_id: requestId });
+    return c.json({ status: "succeeded", method: "linked", note: null, transcript, drafts: [draft] }, 200);
   }
   const x = await extract(c.env, u, transcript, b.reference_time, tz);
   const ids = await saveDrafts(db, u, "voice", b.reference_time, tz, x.items, x.method, { transcript });

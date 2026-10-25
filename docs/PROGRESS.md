@@ -2,9 +2,27 @@
 
 _Status legend: **implemented** (code exists), **tested** (automated/manual evidence recorded), **failed**, **not tested**._
 
-## Latest — 25 October 2026, demo interface refresh
+## Demo readiness and OpenAI secret — 25 October 2026
 
-The web client has a presentation-ready local visual refresh: typography, navigation, card hierarchy, spending summary, review states and mobile layout are improved without remote assets, analytics, changed accounting behavior or new API calls. Lint and full typecheck passed. The existing browser suite was started after the CSS-only change; it is not recorded as passing in this checkpoint.
+The beginner-oriented README now contains the live demo path, screenshots, architecture, local commands, explicit prototype boundaries and private OpenAI key instructions. The SuperMoney payment/share/chat screenshots are checked in under `docs/evidence/screenshots/` and are labelled synthetic. Latest local verification: lint/typecheck, 68 domain tests, 51 API tests (OpenAI mocked), 20 desktop/mobile Playwright tests and 12 deploy-safety checks passed. The production homepage and `/api/v1/health` are healthy. No live provider call was made and no credits were consumed.
+
+`wrangler secret list --env production` returned an empty list before key setup; local `apps/api/.dev.vars` is absent. Therefore the OpenAI API integration is guarded and mock-tested but live receipt extraction and voice transcription are not configured/verified. The first secret prompt ran in a separate shell session; the value was entered into the ordinary PowerShell prompt, which treated it as a command. No production secret was saved; that unused Wrangler prompt was cancelled, and the matching local PowerShell history entry was removed. The key was exposed in chat and the terminal, so it must be revoked and replaced before further use. No key value is recorded in this repository.
+
+## Latest — 25 October 2026, SuperMoney share and contextual chat reply
+
+The primary navigation now follows the five sections on the paper flow chart. The SuperMoney tab recreates the supplied payment-success and share-sheet sequence using synthetic sample data, then opens the WhatsApp-style TinkerSpend chat concept with a ₹3,500 review draft. A reply during the 30-second window carries the target draft ID through the authenticated API and updates that expense instead of creating a second one. Clear purposes receive an existing deterministic category; unclear purposes remain for review. A voice reply is transcribed once and linked to the same draft without a second extraction call. The chat flow still labels the contact and payment as demo data and never sends a real WhatsApp message or payment.
+
+Verified locally: 68 domain tests, 51 API tests with mocked OpenAI, 20 Playwright browser tests across desktop and mobile, lint, typecheck and production deploy-safety checks pass. The SuperMoney demo endpoint and typed reply path make no OpenAI requests; voice tests mock transcription. **No real OpenAI credits were used.** Deployed Cloudflare Worker version `60bd1be2-27c7-4fdb-891f-bed57caf65bd` to `https://expenses.tinkercraft.in`; production homepage returned 200 and `/api/v1/health` returned `{ "ok": true, "env": "production", "d1_ms": 22 }`. This confirms the app is live, not real Meta/WhatsApp delivery, live Google sign-in or physical-phone capture.
+
+## Latest — 25 October 2026, full-screen chat interaction
+
+The chat is now a dedicated full-viewport `WhatsApp` tab with a one-line composer and separate photo preview/send flow. Voice messages use press-and-hold, release-to-send and left-swipe-to-delete; sent photos/voice notes appear as media bubbles with playback. It remains visibly identified as a TinkerSpend concept demo. Existing authenticated draft endpoints and explicit review-before-save behavior are retained. Production build and deploy-safety guard passed; Cloudflare reports version `ce4f7d79-5f94-4536-9ca2-71ef85ad34d2` deployed at `https://expenses.tinkercraft.in`. No runtime/API tests or OpenAI calls were made at the owner's request.
+
+## Latest — 25 October 2026, dark interface refresh
+
+The client now uses a charcoal and deep-green theme and presents the existing text, receipt and voice draft flows as a conversational assistant. Its dark chat draws on the provided WhatsApp references with a subdued, locally embedded doodle pattern, green user bubbles and gray assistant bubbles; it remains branded as TinkerSpend. It uses the same authenticated endpoints and review-before-save safeguards; suggested prompts fill the composer without making a request. Account settings expose the existing AI-processing opt-in with an OpenAI data/credit disclosure. AI use still depends on that setting, the quota and a private Worker key; text extraction falls back to deterministic parsing when AI is unavailable. Lint, full typecheck, web build, 68 domain tests and 48 API tests pass. Production version `155b12a3-b6d9-4248-ab3d-37e4c1ca8242` is live at `https://expenses.tinkercraft.in`; homepage, published assets and production API health passed smoke checks. No OpenAI call was made. Playwright could not launch bundled Chromium (`spawn UNKNOWN`); retries using system browsers stalled before returning results, so browser behavior is not verified in this checkpoint.
+
+The earlier light-theme presentation refresh below is retained as historical work; this update supersedes its visual palette.
 
 ## Latest — 25 October 2026, production deployment
 

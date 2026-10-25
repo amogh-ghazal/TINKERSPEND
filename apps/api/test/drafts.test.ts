@@ -100,6 +100,53 @@ describe("text drafts", () => {
   });
 });
 
+describe("SuperMoney share and contextual replies", () => {
+  it("creates a synthetic payment draft without AI and links a typed purpose to that draft", async () => {
+    const owner = await loginAndroid("sub-supermoney-1", "demo1@example.com");
+    const calls = mockOpenAI(() => responsesOk({ expenses: [] }));
+    const referenceTime = Date.now();
+    const created = await call("POST", "/api/v1/drafts/demo-payment", { token: owner.token, body: { operation_id: uuid(), reference_time: referenceTime, timezone: "Asia/Kolkata" } });
+    expect(created.status).toBe(201);
+    const original = created.json.drafts[0];
+    expect(original).toMatchObject({ demo: true, entry: { amount: "3500.00", counterparty: "Vineesh (demo)", category_id: "uncategorized" } });
+    const linked = await call("POST", "/api/v1/drafts/text", { token: owner.token, body: { operation_id: uuid(), text: "Dinner with friends", reference_time: Date.now(), timezone: "Asia/Kolkata", reply_to_draft_id: original.id } });
+    expect(linked.status).toBe(200);
+    expect(linked.json).toMatchObject({ method: "linked", drafts: [{ id: original.id, purpose_note: "Dinner with friends", entry: { amount: "3500.00", description: "Dinner with friends", category_id: "food_drinks" } }] });
+    expect(calls).toHaveLength(0);
+    expect((await call("GET", "/api/v1/transactions?month=" + linked.json.drafts[0].entry.effective_local_date.slice(0, 7), { token: owner.token })).json.items).toHaveLength(0);
+  });
+
+  it("rejects stale or cross-account contextual replies", async () => {
+    const owner = await loginAndroid("sub-supermoney-2", "demo2@example.com");
+    const other = await loginAndroid("sub-supermoney-3", "demo3@example.com");
+    const created = await call("POST", "/api/v1/drafts/demo-payment", { token: owner.token, body: { operation_id: uuid(), reference_time: Date.now(), timezone: "Asia/Kolkata" } });
+    const draftId = created.json.drafts[0].id;
+    const foreign = await call("POST", "/api/v1/drafts/text", { token: other.token, body: { operation_id: uuid(), text: "Dinner", reference_time: Date.now(), timezone: "Asia/Kolkata", reply_to_draft_id: draftId } });
+    expect(foreign.status).toBe(404);
+    const late = await call("POST", "/api/v1/drafts/text", { token: owner.token, body: { operation_id: uuid(), text: "Dinner", reference_time: created.json.drafts[0].created_at + 31_000, timezone: "Asia/Kolkata", reply_to_draft_id: draftId } });
+    expect(late.status).toBe(409);
+    expect(late.json.error.message).toContain("30-second");
+  });
+
+  it("transcribes a voice reply but skips a second expense extraction call", async () => {
+    const owner = await loginAndroid("sub-supermoney-4", "demo4@example.com");
+    const created = await call("POST", "/api/v1/drafts/demo-payment", { token: owner.token, body: { operation_id: uuid(), reference_time: Date.now(), timezone: "Asia/Kolkata" } });
+    const target = created.json.drafts[0];
+    const real = globalThis.fetch;
+    const calls: string[] = [];
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
+      if (!url.startsWith("https://api.openai.com/")) return real(input, init);
+      calls.push(url);
+      return new Response(JSON.stringify({ text: "Dinner with friends", usage: { seconds: 2 } }), { status: 200, headers: { "content-type": "application/json", "x-request-id": "mock-transcription" } });
+    });
+    const linked = await voice(owner.token, uuid(), { reply_to_draft_id: target.id, reference_time: Date.now() });
+    expect(linked.status).toBe(200);
+    expect(linked.json).toMatchObject({ method: "linked", transcript: "Dinner with friends", drafts: [{ id: target.id, entry: { category_id: "food_drinks" } }] });
+    expect(calls).toEqual(["https://api.openai.com/v1/audio/transcriptions"]);
+  });
+});
+
 describe("voice drafts", () => {
   it("validates spoken amounts independently and rejects balance digits or invented amounts", async () => {
     const a = await loginAndroid("sub-v-words", "vwords@example.com");

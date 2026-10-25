@@ -157,6 +157,7 @@ export const TextDraftRequest = z.object({
   text: z.string().min(1).max(LIMITS.textChars),
   reference_time: z.number().int().positive(),
   timezone: z.string().max(64).optional(),
+  reply_to_draft_id: Uuid.optional(),
 }).strict();
 export const MediaDraftRequest = z.object({
   operation_id: Uuid,
@@ -165,6 +166,12 @@ export const MediaDraftRequest = z.object({
   mime_type: z.string().max(40),
   data_base64: z.string().max(Math.ceil((LIMITS.audioBytes * 4) / 3) + 8),
   duration_ms: z.number().int().positive().max(LIMITS.audioSeconds * 1000 + 500).optional(),
+  reply_to_draft_id: Uuid.optional(),
+}).strict();
+export const DemoPaymentDraftRequest = z.object({
+  operation_id: Uuid,
+  reference_time: z.number().int().positive(),
+  timezone: z.string().max(64).optional(),
 }).strict();
 
 export const ClassifyInput = z.object({ draft_id: Uuid, operation_id: Uuid });

@@ -1,5 +1,32 @@
 # Change log
 
+## 2026-10-25 — Demo readiness documentation and screenshots
+
+- Reworked the README into a concise demo guide with the presentation path, architecture, setup, test commands, API-key handling and explicit boundaries around the WhatsApp/SuperMoney concept screens.
+- Added three checked-in synthetic screenshots and a dated evidence report. The images are from the local browser fixture flow, not live third-party apps or real AI results.
+- Confirmed API tests are mocked and no provider request was made. The production Worker has no secrets configured; live OpenAI processing remains unavailable until the owner replaces the key shared in chat and configures the replacement privately.
+- Latest checks: lint, typecheck, 68 domain, 51 API, 20 desktop/mobile browser and 12 deployment-safety tests passed. Production API health is healthy. No credits were used.
+
+## 2026-10-25 — SuperMoney share-to-chat flow
+
+- Changed: aligned the top-level navigation with the paper flow chart (Overview, WhatsApp, SuperMoney, Review, Account) and added a screenshot-based SuperMoney payment-success view, animated share sheet, WhatsApp contact picker and editable outgoing message.
+- Interaction: sending the synthetic demo receipt opens the full-screen TinkerSpend chat concept, creates a reviewable ₹3,500 sample draft, and asks what the payment was for. A typed reply within 30 seconds updates that exact draft and applies a deterministic category when clear; otherwise it remains uncategorized for review. A voice reply is tied to the same draft and runs transcription without a second expense-extraction request. Saving still requires review and explicit paid confirmation.
+- Privacy/cost: the payee is labeled demo, the UPI reference is synthetic and no real WhatsApp message or SuperMoney payment is sent. The demo draft and typed purpose link make no OpenAI calls; voice may use the existing transcription API only after the owner sends a recording. Automated API responses were mocked and browser tests used local D1, so no OpenAI credits were consumed.
+- Validation: 68 domain tests, 51 local API tests (mocked OpenAI), 20 desktop/mobile browser tests, lint, typecheck and production deployment-safety guard pass. Deployed Cloudflare Worker version `60bd1be2-27c7-4fdb-891f-bed57caf65bd` to `https://expenses.tinkercraft.in`; homepage and production D1 health checks returned 200/healthy. No live OpenAI calls were made.
+
+## 2026-10-25 — Full-screen WhatsApp-style chat demo
+
+- Changed: moved chat into a dedicated full-viewport `WhatsApp` tab, removed the “expense assistant” headline and example chips, and replaced the scrolling textarea with a one-line message composer. The interface uses familiar dark chat cues while visibly identifying itself as a TinkerSpend concept demo.
+- Interaction: holding the microphone records; release sends through the existing voice draft API; sliding left deletes the in-progress recording. Added a playback waveform, photo preview/cancel/send flow and sent media bubbles while keeping the existing review-before-ledger-save step.
+- Validation/deployment: production client build and deploy-safety guard passed; Cloudflare reports Worker version `ce4f7d79-5f94-4536-9ca2-71ef85ad34d2` deployed to `https://expenses.tinkercraft.in`. No runtime/API tests or OpenAI requests were made at the owner's request; existing API endpoints and prompts were not changed.
+
+## 2026-10-25 — Dark assistant interface and motion polish
+
+- Changed: replaced the pale palette with charcoal and deep-green surfaces, added branded navigation and accessible motion, and reshaped existing text, receipt and voice draft intake as a conversational assistant. The dark chat takes visual cues from the supplied WhatsApp references through muted doodle wallpaper and contrasting bubbles while retaining TinkerSpend branding. The chat uses the same authenticated draft APIs and review-before-save workflow; suggested prompts only fill the composer, so the user chooses when to send a request. Added an explicit Account setting for AI processing with an OpenAI data and credit disclosure.
+- Accessibility and cost: reduced-motion and keyboard focus states are respected. AI extraction follows the account setting, quota and private Worker key; deterministic text parsing remains available when AI is off or unavailable. No model, prompt, dependency, remote asset or tracking changes were added.
+- Validation: lint, full typecheck, production web build, 68 domain tests and 48 API tests pass. Playwright could not launch its bundled Chromium (`spawn UNKNOWN`); retries using system browsers stalled before results, so browser behavior remains unverified in this session.
+- Deployment: published production Worker version `155b12a3-b6d9-4248-ab3d-37e4c1ca8242` and the matching static client to `https://expenses.tinkercraft.in`. Homepage, CSS/JS assets and production API health all returned 200/healthy. No OpenAI request was made during deployment or smoke checks.
+
 ## 2026-10-25 — Demo presentation surface
 
 - Changed: refreshed the web interface with a local design system for a clearer demo narrative: branded shell, refined navigation, prominent spending cards, calmer review states and responsive mobile spacing. No tracking, remote font, account, API or accounting behavior was added.

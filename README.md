@@ -1,96 +1,104 @@
 # TinkerSpend
 
-Android expense tracker that automatically recognizes supported payment/bank notifications after one app-wide notification-access setup, turns them into transactions, and reconciles them with manual, typed, voice and receipt entries. Monthly totals are in integer paise (INR), India time by default.
+**One place to capture, review and understand everyday spending.** TinkerSpend is an Android-first expense tracker with a web companion. It can collect supported payment alerts, turn typed or spoken notes and receipt photos into editable drafts, and keep uncertain items in review.
 
-Capture includes currently visible and subsequent accessible alerts. Recognized bank alerts in supported messaging apps are filtered locally; there is no SMS-inbox permission. There are no per-app selection checkboxes. Clear merchant payments can be logged as expenses automatically; uncertain debits, unmatched refunds and possible duplicates stay in review. A nonblocking purpose question lets the user explain a payment and optionally remember its category. Alert time and an evidenced bank name appear in the register/CSV; missing or conflicting bank information remains unknown. See [capture behavior](docs/NOTIFICATION_CAPTURE.md).
+**Live demo:** [expenses.tinkercraft.in](https://expenses.tinkercraft.in/) · **Status and known limits:** [project progress](docs/PROGRESS.md) · **Submission notes:** [SUBMISSION.md](SUBMISSION.md)
 
-Status, evidence and what is still unverified: `docs/PROGRESS.md`, `docs/TEST_MATRIX.md`, `docs/evidence/`. Owner actions still needed: `docs/OWNER_ACTIONS.md`.
+> The WhatsApp-style screen and SuperMoney payment/share flow are a TinkerSpend presentation prototype using synthetic sample data. They do not connect to WhatsApp or SuperMoney, send messages, or initiate payments. OpenAI processing is optional and is unavailable in production until the owner configures a private Worker secret.
 
-Owner: Amogh Suresh (@amogh-ghazal). Primary hackathon track: **Kill the Busywork**. [Submission preparation](SUBMISSION.md), [AI usage](AI_USAGE.md), [change log](CHANGELOG.md), [screenshots and evidence](docs/evidence/README.md), and [organizer-template provenance](docs/TEMPLATE_PROVENANCE.md). The existing repository history is preserved; it was not originally created through GitHub's template button.
+## Demo in about a minute
 
-## Layout
+1. Open the [live demo](https://expenses.tinkercraft.in/) and choose the invited Google account. Production access is restricted to the server-side email allowlist.
+2. Start on **Overview**, then open **SuperMoney** to see a clearly labelled sample ₹3,500 payment-success screen.
+3. Tap **Share** and choose **WhatsApp** to view the in-app share-sheet transition and the WhatsApp-inspired chat. The share creates an editable transaction draft; it is not a real OS share or WhatsApp delivery.
+4. Reply to the assistant’s purpose question within 30 seconds (for example, “Dinner with friends”). The reply is associated with that exact draft. Review it in **Review** before saving.
+5. Open **Account** to show privacy and AI-processing controls. **Overview** presents saved transaction totals; the SuperMoney sample is not counted as real spending until the user reviews and saves it.
 
-| Path | What |
+For a stable presentation when sign-in or network access is unavailable, use the labelled screenshots below. They were produced from the local browser test with synthetic fixtures and mocked API responses; they are not screenshots of a real bank, real WhatsApp, live OCR, or production OpenAI processing.
+
+## Demo screenshots
+
+| Step | Screenshot |
 |---|---|
-| `packages/domain` | money, dates, accounting, notification/statement parsers, CSV safety (pure TS) |
-| `packages/contracts` | zod request/response schemas shared by API and client |
-| `apps/api` | Cloudflare Worker (Hono) + D1 migrations; the only place OpenAI is called |
-| `apps/client` | React/Vite web app, also packaged by Capacitor for Android |
-| `apps/client/android` | native Kotlin capture: `NotificationListenerService`, encrypted Room outbox, WorkManager sync, AuthBridge/Recorder plugins |
-| `e2e` | Playwright browser tests (local Worker, test-only sign-in, no OpenAI) |
-| `docs` | spec, decisions, costs, test matrix, evidence, evaluations |
+| Sample payment success | [SuperMoney payment](docs/evidence/screenshots/supermoney-payment-demo.png) |
+| Choose a share destination | [Share sheet](docs/evidence/screenshots/supermoney-share-sheet.png) |
+| Shared receipt and purpose follow-up | [WhatsApp-style chat](docs/evidence/screenshots/supermoney-shared-to-chat.png) |
+| Android capture evidence | [Synthetic Android payment capture](docs/evidence/screenshots/android-020-payment.png) |
 
-## Setup
+More browser and emulator evidence, with provenance and limitations, is indexed in [docs/evidence/README.md](docs/evidence/README.md).
 
-Requires Node 22+ (22 recommended) and pnpm 11.25.0. The Codex Windows checkpoint passed under Node 24.22.1 / pnpm 11.25.0; Devin's historical handoff used pnpm 10. For Android: JDK 21 and Android SDK 36. The installer allows only the required esbuild/workerd native build scripts; release-age protection remains enabled in the local package manager. Development type packages and `ignore` are pinned to versions accepted by that policy.
+## What it does
 
-```bash
-pnpm run setup        # pnpm install --frozen-lockfile + toolchain checks
-pnpm lint && pnpm typecheck
-pnpm test             # domain/accounting
-pnpm test:api         # Worker + D1 in local workerd (OpenAI mocked)
-pnpm test:e2e         # browser, desktop + Pixel 7 viewport
+- Captures currently visible and subsequent supported payment notifications after a single, disclosed Android notification-access setup. There is no SMS inbox permission and no per-app permission picker. Capture filters run locally; uncertain debits, refunds and possible duplicates go to review. See [notification capture behavior](docs/NOTIFICATION_CAPTURE.md).
+- Supports manual entries, typed descriptions, receipt photos, voice notes and an Android encrypted offline outbox. AI-derived fields remain editable; saving a draft requires the user’s explicit action.
+- Tracks INR using integer paise, handles expenses/refunds and monthly totals, and supports CSV export.
+- Offers an invited-account web app and a Capacitor Android client with native Kotlin notification capture, encrypted Room storage, and WorkManager sync.
+- Includes the **WhatsApp** and **SuperMoney** demo sections shown in the supplied presentation flow. These are in-app simulations, not integrations with either third-party service.
+
+## OpenAI processing and credits
+
+OpenAI calls are made **only by the Cloudflare Worker**, never by the browser or APK. The key is read from the Worker’s `OPENAI_API_KEY` secret; it must not be put in source code, a Vite/client variable, screenshots, GitHub, or chat. The account’s AI-processing opt-in and server quota still apply. Without a configured key, deterministic text parsing can still handle supported simple entries; AI-dependent receipt extraction and voice transcription report that they are not configured.
+
+Automated checks below stub OpenAI and do not consume API credits. No live OpenAI request is included in this test suite or in the SuperMoney demo flow. To configure a **new, private** production key after creating it in the OpenAI dashboard, run this from the repository root and enter the value only at Wrangler’s hidden prompt:
+
+```powershell
+pnpm --filter @tinkerspend/api exec wrangler secret put OPENAI_API_KEY --env production
 ```
 
-On Windows, use these direct commands instead of the Bash setup wrapper:
+For local Worker development, use the ignored `apps/api/.dev.vars` file and keep it out of Git. Never paste a key in chat. If a key has been shared in a message, revoke it and create a replacement before use. See [security and deployment](docs/SECURITY_AND_DEPLOYMENT.md) and [cost limits](docs/COSTS.md).
+
+## Run locally
+
+Requirements: Node.js 22 or newer (22 recommended), pnpm 11.25.0, JDK 21 and Android SDK 36 for Android builds.
 
 ```powershell
 pnpm install --frozen-lockfile
-pnpm exec playwright install chromium --no-shell
 pnpm lint
 pnpm typecheck
 pnpm test
 pnpm test:api
+$env:TS_BROWSER_CHANNEL = 'chrome'
 pnpm test:e2e
 ```
 
-If bundled Chromium cannot launch on a particular machine, use an installed Chrome in an isolated test profile: `$env:TS_BROWSER_CHANNEL='chrome'; pnpm test:e2e`. This is how the Windows browser checks were verified. It does not attach to personal tabs.
+`test:api` uses local workerd/D1 and mocked OpenAI responses. `test:e2e` starts an isolated local Worker/database and uses test-only sign-in; it does not call OpenAI or production. Do not deploy the insecure test identity verifier. See [virtual Android testing](docs/VIRTUAL_TESTING.md) for synthetic emulator checks.
 
-The E2E command starts its own local Worker/D1 and static app, creates a fresh test-only database under ignored `.wrangler/`, and runs the demo interactions without keys. Do not deploy its insecure test identity verifier. Receipt browser tests mock extraction/draft responses; notification-to-receipt matching is tested separately in the API suite with local D1.
+## Architecture
 
-Supported English monetary words such as `lunch two hundred and fifty` are normalized deterministically, including Indian lakh/crore grammar and decimal digits. Invalid/approximate phrases remain unparsed; unsupported speech and real transcription accuracy still require evaluation. Drafts remain editable and require explicit Save.
+| Area | Responsibility |
+|---|---|
+| `apps/client` | React/Vite web experience and Capacitor client |
+| `apps/client/android` | Kotlin notification listener, encrypted Room outbox, WorkManager, auth and recording bridges |
+| `apps/api` | Cloudflare Worker/Hono API, D1 migrations, authentication, quotas and server-only OpenAI requests |
+| `packages/domain` | Integer-paise accounting, date/category rules, parsers and CSV safety |
+| `packages/contracts` | Shared validated API request and response schemas |
+| `e2e` | Playwright desktop/mobile browser tests with local services and synthetic data |
+| `docs/evidence` | Dated test reports and labelled synthetic screenshots |
 
-## Android
+## Deployment
 
-```bash
-pnpm android:debug    # debug APK (includes the synthetic fixture source, labelled; may use http://10.0.2.2)
-pnpm android:test     # JVM unit tests
-TS_RELEASE_KEYSTORE=/path/release.jks ANDROID_RELEASE_KEYSTORE_PASSWORD=... pnpm android:release
-pnpm release:check path/to/app-release.apk   # signer, v2, no debuggable/cleartext, no secrets
-pnpm package:android-download path/to/app-release.apk  # stage verified signed APK in website build
+The app is hosted on Cloudflare Workers and D1. Follow [security and deployment](docs/SECURITY_AND_DEPLOYMENT.md), configure actual D1 IDs, HTTPS origins, OAuth client ID and allowlist, then use the guarded scripts:
+
+```powershell
+pnpm test:deploy-safety
+pnpm deploy:staging
+pnpm deploy:production
 ```
 
-Windows equivalent after setting `JAVA_HOME` (JDK 21) and `ANDROID_HOME` (SDK): `pnpm android:sync`, then `cd apps/client/android` and `.\gradlew.bat :app:testDebugUnitTest :app:assembleDebug :app:assembleDebugAndroidTest :fixture:assembleDebug`. Set `TS_DEBUG_KEYSTORE` to the privately backed-up shared debug key when testing Google sign-in; a default local debug signer will have a different OAuth fingerprint. Signing keys/passwords must not be committed.
+Deployment requires an authenticated Cloudflare CLI/session and correctly configured project variables. Keep the app on Workers Free and D1 Free; do not enable paid add-ons. The current public web deployment is live, but live Google sign-in, OpenAI-backed processing, WhatsApp Business delivery and physical-phone payment-alert compatibility each have separate requirements and are not implied by a healthy homepage. See [owner actions](docs/OWNER_ACTIONS.md) and [progress](docs/PROGRESS.md).
 
-For the dedicated synthetic Android emulator suite, see [virtual testing](docs/VIRTUAL_TESTING.md). Guarded PowerShell runners refuse other AVDs/phones, run eight native tests, and check current/new automatic capture without launching the app UI. Latest results: [0.2.0 evidence](docs/evidence/codex-020-automatic-capture.md). Earlier evidence remains historical.
+## Android builds
 
-The release keystore and password live only in owner-controlled secret storage (never in the repo). Release signer SHA-1: `81:48:00:D8:3A:E4:4B:A9:04:99:EE:2F:52:5D:7C:26:61:81:B8:D8`. Losing the keystore means existing installs cannot be updated; keep the backup.
+```powershell
+pnpm android:sync
+pnpm android:debug
+pnpm android:test
+```
 
-## Deployment (Cloudflare Workers Free + D1 Free)
+Release builds require the privately backed-up release keystore. Never commit signing files or passwords. A debug APK is for development and does not establish public-release signing or real payment-app compatibility. The original release key and physical-phone installation/capture checks remain owner-dependent; see [owner actions](docs/OWNER_ACTIONS.md).
 
-1. `wrangler d1 create tinkerspend-staging` / `tinkerspend-prod`; put the returned IDs into `apps/api/wrangler.toml` (the deploy refuses placeholder IDs).
-2. Set `GOOGLE_WEB_CLIENT_ID` and `ALLOWED_ORIGINS` vars; set secrets: `wrangler secret put OPENAI_API_KEY [--env production]`.
-3. `CLOUDFLARE_API_TOKEN=... CLOUDFLARE_ACCOUNT_ID=... pnpm deploy:staging` (or `deploy:production`): safety check → web build → remote migrations → deploy.
-4. Custom domain: only add `expenses.tinkercraft.in` if no DNS record exists for it; existing records and sites are left untouched.
-5. Allowlist users (owner + testers) in the D1 `allowlist` table.
+## Privacy and limitations
 
-Never enable Workers Paid, R2, Queues, Logpush or any paid plan (`docs/COSTS.md`).
+TinkerSpend does not read the SMS inbox or UPI app history. Android notification access sees only notifications Android makes accessible; content can be hidden, delayed, or removed by the source app or device manufacturer. Receipt originals are kept on the capturing device. Server account data is isolated and can be exported or deleted in the app. Review [security and deployment](docs/SECURITY_AND_DEPLOYMENT.md), [costs](docs/COSTS.md), [progress](docs/PROGRESS.md), and the [test matrix](docs/TEST_MATRIX.md) before relying on any feature.
 
-## Owner configuration
-
-See `docs/OWNER_ACTIONS.md` for Google OAuth clients (web + Android release/debug SHA-1s), allowlisted emails, real-phone source verification, and the APK install checklist.
-Capture setup itself is global; the owner only identifies which real payment/bank sources to verify on a phone. The deployment script derives the public web client ID from the selected backend configuration. Run `pnpm test:deploy-safety` for local guard tests. Review [security and Free-tier deployment](docs/SECURITY_AND_DEPLOYMENT.md) before any public deployment; account configuration and original release-key access are still pending.
-
-## Recovery
-
-- **Lost phone / switch account:** sign out offers to delete or keep pending captures; events queued under account A are never uploaded under account B. Revoke the old device in Settings.
-- **Leaked OpenAI key:** rotate at OpenAI, then `wrangler secret put OPENAI_API_KEY`; no client artifact contains it.
-- **Bad deploy:** `wrangler rollback [--env production]`; D1 migrations are additive.
-- **D1 backup:** `wrangler d1 export tinkerspend-prod --remote --output backup.sql`; users can also export CSV.
-- **Delete data:** Settings → delete account removes all server rows for the user; receipt photos exist only on the capturing device.
-
-## Known limitations
-
-Only supported sources with accessible readable payment alerts are captured; cleared notification history and the SMS inbox are unavailable. Currently visible alerts are imported when capture connects/resumes. Android can redact content or delay sync, and the OS may require restricted-settings approval for a sideloaded APK. Receipt originals are local-only; public APK installation may be blocked by Play Protect. Unverified items are listed in `docs/PROGRESS.md`.
-
-Native diagnostics are scoped to the bound account. Notification text stays in the Keystore-encrypted payload; previews are decrypted on demand, rather than persisted as plaintext. Room schema version 2 includes a migration clearing legacy preview strings while retaining encrypted payloads. Current build/instrumentation status is recorded in progress; this is not a claim of physical-device verification.
+This repository’s history is preserved; it was not originally created using GitHub’s template button. See [template provenance](docs/TEMPLATE_PROVENANCE.md). Primary hackathon track: **Kill the Busywork**.

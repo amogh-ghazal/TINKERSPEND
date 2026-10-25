@@ -26,5 +26,6 @@ export interface DraftEntry {
 export interface Draft {
   id: string; source: "text" | "voice" | "receipt"; status: string; version: number; reference_at: number; timezone: string;
   entry: DraftEntry; assumptions: string[]; extraction: "ai" | "deterministic"; input_text: string | null; transcript: string | null;
+  purpose_note?: string | null; demo?: boolean;
   receipt: { merchant: string | null; taxes: string[]; fees: string[]; discounts: string[]; duplicate_of: string | null } | null;
 }
