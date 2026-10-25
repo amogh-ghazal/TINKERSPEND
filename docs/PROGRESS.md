@@ -2,6 +2,10 @@
 
 _Status legend: **implemented** (code exists), **tested** (automated/manual evidence recorded), **failed**, **not tested**._
 
+## Latest — 25 October 2026, full-screen chat interaction
+
+The chat is now a dedicated full-viewport `WhatsApp` tab with a one-line composer and separate photo preview/send flow. Voice messages use press-and-hold, release-to-send and left-swipe-to-delete; sent photos/voice notes appear as media bubbles with playback. It remains visibly identified as a TinkerSpend concept demo. Existing authenticated draft endpoints and explicit review-before-save behavior are retained. Production build and deploy-safety guard passed; Cloudflare reports version `ce4f7d79-5f94-4536-9ca2-71ef85ad34d2` deployed at `https://expenses.tinkercraft.in`. No runtime/API tests or OpenAI calls were made at the owner's request.
+
 ## Latest — 25 October 2026, dark interface refresh
 
 The client now uses a charcoal and deep-green theme and presents the existing text, receipt and voice draft flows as a conversational assistant. Its dark chat draws on the provided WhatsApp references with a subdued, locally embedded doodle pattern, green user bubbles and gray assistant bubbles; it remains branded as TinkerSpend. It uses the same authenticated endpoints and review-before-save safeguards; suggested prompts fill the composer without making a request. Account settings expose the existing AI-processing opt-in with an OpenAI data/credit disclosure. AI use still depends on that setting, the quota and a private Worker key; text extraction falls back to deterministic parsing when AI is unavailable. Lint, full typecheck, web build, 68 domain tests and 48 API tests pass. Production version `155b12a3-b6d9-4248-ab3d-37e4c1ca8242` is live at `https://expenses.tinkercraft.in`; homepage, published assets and production API health passed smoke checks. No OpenAI call was made. Playwright could not launch bundled Chromium (`spawn UNKNOWN`); retries using system browsers stalled before returning results, so browser behavior is not verified in this checkpoint.

@@ -1,5 +1,11 @@
 # Change log
 
+## 2026-10-25 — Full-screen WhatsApp-style chat demo
+
+- Changed: moved chat into a dedicated full-viewport `WhatsApp` tab, removed the “expense assistant” headline and example chips, and replaced the scrolling textarea with a one-line message composer. The interface uses familiar dark chat cues while visibly identifying itself as a TinkerSpend concept demo.
+- Interaction: holding the microphone records; release sends through the existing voice draft API; sliding left deletes the in-progress recording. Added a playback waveform, photo preview/cancel/send flow and sent media bubbles while keeping the existing review-before-ledger-save step.
+- Validation/deployment: production client build and deploy-safety guard passed; Cloudflare reports Worker version `ce4f7d79-5f94-4536-9ca2-71ef85ad34d2` deployed to `https://expenses.tinkercraft.in`. No runtime/API tests or OpenAI requests were made at the owner's request; existing API endpoints and prompts were not changed.
+
 ## 2026-10-25 — Dark assistant interface and motion polish
 
 - Changed: replaced the pale palette with charcoal and deep-green surfaces, added branded navigation and accessible motion, and reshaped existing text, receipt and voice draft intake as a conversational assistant. The dark chat takes visual cues from the supplied WhatsApp references through muted doodle wallpaper and contrasting bubbles while retaining TinkerSpend branding. The chat uses the same authenticated draft APIs and review-before-save workflow; suggested prompts only fill the composer, so the user chooses when to send a request. Added an explicit Account setting for AI processing with an OpenAI data and credit disclosure.

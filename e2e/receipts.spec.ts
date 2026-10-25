@@ -62,7 +62,7 @@ for (const mode of ["correct", "total", "attach"] as const) {
   test(`receipt photo → ${mode} → one ledger item with a local photo`, async ({ page }, info) => {
     await login(page, `drafts-${info.project.name}@e2e.test`);
     const state = await receiptFixture(page, mode);
-    await page.getByRole("button", { name: "Assistant", exact: true }).click();
+    await page.getByRole("button", { name: "WhatsApp", exact: true }).click();
     await photo(page);
     expect(state.uploaded()?.mime_type).toBe("image/jpeg");
     expect(Buffer.from(String(state.uploaded()?.data_base64), "base64").length).toBeLessThanOrEqual(750 * 1024);

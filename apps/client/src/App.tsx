@@ -10,7 +10,7 @@ import { Settings } from "./screens/Settings";
 import { TxnForm } from "./screens/TxnForm";
 import { QuickAdd } from "./screens/QuickAdd";
 
-type Tab = "overview" | "assistant" | "ledger" | "review" | "add" | "capture" | "account";
+type Tab = "overview" | "whatsapp" | "ledger" | "review" | "add" | "capture" | "account";
 
 export function App() {
   const [me, setMe] = useState<Me | null | undefined>(undefined);
@@ -49,21 +49,22 @@ function Home({ me, onSignedOut }: { me: Me; onSignedOut: () => void }) {
     const timer = window.setInterval(refresh, 60_000);
     return () => { document.removeEventListener("visibilitychange", refresh); window.clearInterval(timer); };
   }, [tab, bump]);
-  const tabs: [Tab, string][] = [["overview", "Overview"], ["assistant", "Assistant"], ["ledger", "Transactions"], ["review", "Review"], ["add", "Add"], ...(isNative ? [["capture", "Capture"] as [Tab, string]] : []), ["account", "Account"]];
+  const inWhatsApp = tab === "whatsapp";
+  const tabs: [Tab, string][] = [["overview", "Overview"], ["whatsapp", "WhatsApp"], ["ledger", "Transactions"], ["review", "Review"], ["add", "Add"], ...(isNative ? [["capture", "Capture"] as [Tab, string]] : []), ["account", "Account"]];
   return (
-    <main className="container app-shell">
-      <header className="app-header">
+    <main className={`container app-shell${inWhatsApp ? " whatsapp-mode" : ""}`}>
+      {!inWhatsApp && <header className="app-header">
         <div className="brand-lockup">
           <span className="brand-mark" aria-hidden="true">T</span>
           <div><p className="eyebrow">PERSONAL FINANCE · INDIA</p><h1>TinkerSpend</h1></div>
         </div>
         <div className="privacy-pill"><span className="privacy-dot" />Private workspace</div>
         <p className="header-copy">A clearer picture of where your money goes.</p>
-      </header>
-      <nav className="tabs" aria-label="Sections">{tabs.map(([t, l], i) => <button key={t} className={`tab${tab === t ? " active" : ""}`} aria-current={tab === t ? "page" : undefined} onClick={() => setTab(t)}><span>{l}</span><small>{String(i + 1).padStart(2, "0")}</small></button>)}</nav>
-      <div className="screen-content" key={tab}>
+      </header>}
+      {!inWhatsApp && <nav className="tabs" aria-label="Sections">{tabs.map(([t, l], i) => <button key={t} className={`tab${tab === t ? " active" : ""}`} aria-current={tab === t ? "page" : undefined} onClick={() => setTab(t)}><span>{l}</span><small>{String(i + 1).padStart(2, "0")}</small></button>)}</nav>}
+      <div className={inWhatsApp ? "whatsapp-content" : "screen-content"} key={tab}>
         {tab === "overview" && <Overview key={rev} month={month} setMonth={setMonth} onOpenReview={() => setTab("review")} />}
-        {tab === "assistant" && <QuickAdd onSaved={(t) => { setMonth(t.effective_local_date.slice(0, 7)); bump(); }} />}
+        {tab === "whatsapp" && <QuickAdd onExit={() => setTab("overview")} onSaved={(t) => { setMonth(t.effective_local_date.slice(0, 7)); bump(); }} />}
         {(tab === "ledger" || tab === "review") && <Ledger key={`${tab}-${rev}`} month={month} reviewOnly={tab === "review"} onChanged={bump} timezone={me.timezone} />}
         {tab === "add" && <section className="card"><h2>Add expense</h2><TxnForm key={rev} onDone={(t) => { setMonth(t.effective_local_date.slice(0, 7)); bump(); setTab("ledger"); }} /></section>}
         {tab === "capture" && <CaptureStatusPanel />}

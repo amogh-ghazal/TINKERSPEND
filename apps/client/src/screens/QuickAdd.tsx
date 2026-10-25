@@ -28,10 +28,11 @@ function pickMime() {
 }
 
 type Rec = { state: "idle" } | { state: "recording"; startedAt: number } | { state: "recorded"; startedAt: number; blob: Blob; durationMs: number; url: string } | { state: "uploading"; startedAt: number; blob: Blob; durationMs: number; url: string };
-type ChatTurn = { id: number; from: "person" | "assistant"; text: string };
+type ChatTurn = { id: number; from: "person" | "assistant"; text: string; media?: { type: "image" | "audio"; url: string; durationMs?: number } };
 
-export function QuickAdd({ onSaved }: { onSaved: (t: Txn) => void }) {
+export function QuickAdd({ onSaved, onExit }: { onSaved: (t: Txn) => void; onExit: () => void }) {
   const [text, setText] = useState("");
+  const [attachMenu, setAttachMenu] = useState(false);
   const [drafts, setDrafts] = useState<Draft[]>([]);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -40,11 +41,18 @@ export function QuickAdd({ onSaved }: { onSaved: (t: Txn) => void }) {
   const [elapsed, setElapsed] = useState(0);
   const mr = useRef<{ rec: MediaRecorder; chunks: Blob[]; stream: MediaStream } | null>(null);
   const timer = useRef<number | null>(null);
+  const recordingStartedAt = useRef<number | null>(null);
+  const recordingReady = useRef(false);
+  const recordingEndStarted = useRef(false);
+  const ownedUrls = useRef<string[]>([]);
+  const hold = useRef<{ pointerId: number | null; startX: number; cancelled: boolean; released: boolean }>({ pointerId: null, startX: 0, cancelled: false, released: false });
   const voiceOp = useRef<string>(newOperationId());
   const [photo, setPhoto] = useState<{ blob: Blob; url: string; takenAt: number; op: string; busy: boolean } | null>(null);
-  const [turns, setTurns] = useState<ChatTurn[]>([{ id: 0, from: "assistant", text: "Hi! Tell me what you spent on, send a receipt, or record a voice note. I’ll prepare an editable draft for you to review." }]);
+  const [turns, setTurns] = useState<ChatTurn[]>([]);
   const nextTurnId = useRef(1);
-  const addTurn = (from: ChatTurn["from"], message: string) => setTurns((items) => [...items, { id: nextTurnId.current++, from, text: message }]);
+  const trackUrl = (url: string) => { ownedUrls.current.push(url); return url; };
+  const releaseUrl = (url: string) => { ownedUrls.current = ownedUrls.current.filter((item) => item !== url); URL.revokeObjectURL(url); };
+  const addTurn = (from: ChatTurn["from"], message: string, media?: ChatTurn["media"]) => setTurns((items) => [...items, { id: nextTurnId.current++, from, text: message, media }]);
 
   async function pickPhoto(f: File | undefined) {
     if (!f) return;
@@ -53,8 +61,8 @@ export function QuickAdd({ onSaved }: { onSaved: (t: Txn) => void }) {
       const blob = await normalizeReceipt(f);
       const t = Date.now();
       const takenAt = f.lastModified && f.lastModified <= t && f.lastModified > t - 29 * 86_400_000 ? f.lastModified : t;
-      if (photo) URL.revokeObjectURL(photo.url);
-      setPhoto({ blob, url: URL.createObjectURL(blob), takenAt, op: newOperationId(), busy: false });
+      if (photo) releaseUrl(photo.url);
+      setPhoto({ blob, url: trackUrl(URL.createObjectURL(blob)), takenAt, op: newOperationId(), busy: false });
     } catch (e) { setErr((e as Error).message); }
   }
 
@@ -64,9 +72,9 @@ export function QuickAdd({ onSaved }: { onSaved: (t: Txn) => void }) {
     try {
       const r = await api<{ drafts: Draft[] }>("POST", "/drafts/receipt", { operation_id: photo.op, reference_time: photo.takenAt, timezone: tz(), mime_type: "image/jpeg", data_base64: await blobToBase64(photo.blob) });
       for (const d of r.drafts) await saveReceipt(d.id, photo.blob).catch(() => undefined);
-      addTurn("person", "Sent a receipt photo");
-      addTurn("assistant", `I read the receipt and prepared ${r.drafts.length} editable draft${r.drafts.length === 1 ? "" : "s"}. Check the details below before saving.`);
-      URL.revokeObjectURL(photo.url); setPhoto(null); await load();
+      addTurn("person", "", { type: "image", url: photo.url });
+      addTurn("assistant", "Receipt scanned. Review the expense draft below before saving.");
+      setPhoto(null); await load();
     } catch (e) {
       setPhoto({ ...photo, busy: false, op: newOperationId() });
       setErr(e instanceof ApiFailure && e.code === "outcome_unknown" ? "Receipt reading didn't answer in time and won't be retried automatically. Try again or enter it manually." : errText(e));
@@ -74,14 +82,14 @@ export function QuickAdd({ onSaved }: { onSaved: (t: Txn) => void }) {
   }
 
   const load = () => api<{ items: Draft[] }>("GET", "/drafts").then((r) => setDrafts(r.items)).catch((e) => setErr(errText(e)));
-  useEffect(() => { load(); return () => { if (timer.current) clearInterval(timer.current); }; }, []);
+  useEffect(() => { load(); return () => { if (timer.current) clearInterval(timer.current); for (const url of ownedUrls.current) URL.revokeObjectURL(url); }; }, []);
 
   async function extractText(t: string, referenceTime: number) {
     setBusy(true); setErr(null); setInfo(null);
     try {
       const r = await api<{ drafts: Draft[]; method: string; note: string | null }>("POST", "/drafts/text", { operation_id: newOperationId(), text: t, reference_time: referenceTime, timezone: tz() });
       addTurn("person", t);
-      addTurn("assistant", r.drafts.length ? `I prepared ${r.drafts.length} editable draft${r.drafts.length === 1 ? "" : "s"}. Check the details below, then save only what’s correct.` : "I couldn’t find a clear expense in that message. Try adding the amount or a little more detail.");
+      addTurn("assistant", r.drafts.length ? "Added as a draft. Check the details below before saving." : "Couldn't find a clear expense. Try including the amount.");
       if (r.method === "deterministic" && r.note) setInfo("Parsed on the server without AI; please check each draft.");
       setText(""); await load();
     } catch (e) { setErr(errText(e)); } finally { setBusy(false); }
@@ -89,28 +97,34 @@ export function QuickAdd({ onSaved }: { onSaved: (t: Txn) => void }) {
 
   async function startRec() {
     setErr(null);
-    const startedAt = Date.now();
+    recordingStartedAt.current = null;
     try {
       if (isNative) await Recorder.start();
       else {
         const mime = pickMime();
-        if (mime === null || !navigator.mediaDevices?.getUserMedia) { setErr("Recording isn't supported in this browser. Type the expense instead."); return; }
+        if (mime === null || !navigator.mediaDevices?.getUserMedia) { setErr("Voice recording isn't supported in this browser."); return; }
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         const r = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined);
         const chunks: Blob[] = [];
         r.ondataavailable = (e) => { if (e.data.size) chunks.push(e.data); };
         r.start(); mr.current = { rec: r, chunks, stream };
       }
+      const startedAt = Date.now();
+      recordingStartedAt.current = startedAt;
       voiceOp.current = newOperationId();
+      recordingReady.current = true;
       setRec({ state: "recording", startedAt }); setElapsed(0);
-      timer.current = window.setInterval(() => { const ms = Date.now() - startedAt; setElapsed(ms); if (ms >= MAX_MS) void stopRec(startedAt); }, 250);
+      timer.current = window.setInterval(() => { const ms = Date.now() - startedAt; setElapsed(ms); if (ms >= MAX_MS) void finishRec(startedAt); }, 250);
     } catch (e) {
       const denied = (e as { code?: string; name?: string }).code === "permission_denied" || (e as { name?: string }).name === "NotAllowedError";
       setErr(denied ? "Microphone permission was denied. You can allow it in settings, or type the expense." : "Could not start recording.");
     }
   }
 
-  async function stopRec(startedAt: number) {
+  async function finishRec(startedAt: number) {
+    if (!recordingReady.current || recordingEndStarted.current) return;
+    recordingEndStarted.current = true;
+    recordingReady.current = false;
     if (timer.current) { clearInterval(timer.current); timer.current = null; }
     try {
       let blob: Blob, durationMs: number;
@@ -122,77 +136,123 @@ export function QuickAdd({ onSaved }: { onSaved: (t: Txn) => void }) {
         durationMs = Math.min(Date.now() - startedAt, MAX_MS);
       }
       if (blob.size > MAX_BYTES) { setRec({ state: "idle" }); setErr("Recording is larger than 3 MiB. Please record a shorter note."); return; }
-      setRec({ state: "recorded", startedAt, blob, durationMs, url: URL.createObjectURL(blob) });
-    } catch (e) { setRec({ state: "idle" }); setErr((e as { code?: string }).code === "too_short" ? "Recording too short." : "Recording failed."); }
+      if (durationMs < 350) { setRec({ state: "idle" }); setErr("Hold the microphone a little longer to record a voice message."); return; }
+      const recording = { state: "recorded" as const, startedAt, blob, durationMs, url: trackUrl(URL.createObjectURL(blob)) };
+      setRec(recording);
+      await uploadRecording(recording);
+    } catch (e) { setRec({ state: "idle" }); setErr((e as { code?: string }).code === "too_short" ? "Hold the microphone a little longer to record a voice message." : "Recording failed."); }
+    finally { recordingEndStarted.current = false; hold.current = { pointerId: null, startX: 0, cancelled: false, released: false }; }
   }
 
-  async function cancelRec() {
+  async function cancelRec(showSwipeHint = false) {
+    recordingReady.current = false;
     if (timer.current) { clearInterval(timer.current); timer.current = null; }
     if (isNative) await Recorder.cancel().catch(() => undefined);
     else if (mr.current) { mr.current.rec.stop(); mr.current.stream.getTracks().forEach((t) => t.stop()); mr.current = null; }
-    if (rec.state === "recorded") URL.revokeObjectURL(rec.url);
+    if (rec.state === "recorded") releaseUrl(rec.url);
     setRec({ state: "idle" });
+    hold.current = { pointerId: null, startX: 0, cancelled: false, released: false };
+    if (showSwipeHint) setInfo("Recording deleted");
   }
 
-  async function upload() {
-    if (rec.state !== "recorded") return;
-    const recording = rec;
+  async function uploadRecording(recording: Extract<Rec, { state: "recorded" }>) {
     setRec({ ...recording, state: "uploading" }); setErr(null);
     try {
       await api("POST", "/drafts/voice", { operation_id: voiceOp.current, reference_time: recording.startedAt, timezone: tz(), mime_type: recording.blob.type || "audio/webm", data_base64: await blobToBase64(recording.blob), duration_ms: Math.max(1, recording.durationMs) });
-      addTurn("person", `Sent a voice note · ${(recording.durationMs / 1000).toFixed(1)} seconds`);
-      addTurn("assistant", "I transcribed the voice note and prepared a draft. Check the transcript and expense details below before saving.");
-      URL.revokeObjectURL(recording.url); setRec({ state: "idle" }); await load();
+      addTurn("person", "", { type: "audio", url: recording.url, durationMs: recording.durationMs });
+      addTurn("assistant", "Voice note transcribed. Check the expense draft below before saving.");
+      setRec({ state: "idle" }); await load();
     } catch (e) {
-      // Keep the recording so nothing is lost; a new attempt uses a new operation only when the user asks.
-      setRec({ ...recording, state: "recorded" }); voiceOp.current = newOperationId();
+      setRec({ ...recording, state: "recorded" });
+      voiceOp.current = newOperationId();
       setErr(e instanceof ApiFailure && e.code === "outcome_unknown" ? "Transcription didn't answer in time and won't be retried automatically. Try again or type it." : errText(e));
     }
   }
 
-  return (
-    <section className="card assistant-workspace" aria-label="TinkerSpend expense assistant">
-      <div className="assistant-heading">
-        <div><p className="eyebrow">YOUR EXPENSE ASSISTANT</p><h2>Just tell me what happened</h2><p className="muted">Send a message, voice note, or receipt. I’ll turn it into a draft for you to review.</p></div>
-        <span className="demo-badge live-badge"><span />Connected to your ledger</span>
-      </div>
+  async function beginHold(pointerId: number, startX: number) {
+    if (rec.state !== "idle" || photo || busy) return;
+    setErr(null); setInfo(null);
+    hold.current = { pointerId, startX, cancelled: false, released: false };
+    await startRec();
+    if (hold.current.pointerId !== pointerId) return;
+    if (hold.current.cancelled) await cancelRec(true);
+    else if (hold.current.released && recordingStartedAt.current !== null) await finishRec(recordingStartedAt.current);
+  }
 
+  function releaseHold(pointerId: number) {
+    if (hold.current.pointerId !== pointerId || hold.current.cancelled) return;
+    hold.current.released = true;
+    if (recordingReady.current && rec.state === "recording") void finishRec(rec.startedAt);
+  }
+
+  function moveHold(pointerId: number, clientX: number) {
+    if (hold.current.pointerId !== pointerId || hold.current.cancelled) return;
+    if (clientX <= hold.current.startX - 82) {
+      hold.current.cancelled = true;
+      if (recordingReady.current) void cancelRec(true);
+    }
+  }
+
+  return (
+    <section className="whatsapp-chat" aria-label="WhatsApp concept demo">
       <div className="chat-frame">
         <div className="chat-topbar">
+          <button type="button" className="chat-back" aria-label="Back to TinkerSpend" onClick={onExit}><svg viewBox="0 0 24 24" width="22" height="22" fill="none" aria-hidden="true"><path d="m15 18-6-6 6-6M9 12h12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg></button>
           <div className="chat-avatar" aria-hidden="true">T</div>
-          <div className="chat-contact"><strong>TinkerSpend</strong><span><i /> Personal expense assistant</span></div>
-          <span className="chat-lock" aria-label="Private account">●</span>
+          <div className="chat-contact"><strong>TinkerSpend</strong><span>WhatsApp-style concept demo</span></div>
+          <span className="chat-demo-label">DEMO</span>
         </div>
-        <div className="chat-wall">
-          <div className="chat-day">THIS CONVERSATION</div>
+
+        {photo ? <div className="photo-stage" aria-label="Photo preview before sending">
+          <button type="button" className="photo-close" aria-label="Cancel photo" disabled={photo.busy} onClick={() => { releaseUrl(photo.url); setPhoto(null); }}>×</button>
+          <img src={photo.url} alt="Selected receipt preview" />
+          <span className="photo-demo-note">TinkerSpend demo</span>
+        </div> : <div className="chat-wall">
+          <div className="chat-day">TODAY</div>
+          {turns.length === 0 && <div className="chat-empty-note">Send a message, receipt or voice note</div>}
           <div className="chat-thread" aria-live="polite">
-            {turns.map((turn) => <div className={`chat-message ${turn.from}`} key={turn.id}><p>{turn.text}</p><small className="chat-time">{turn.from === "person" ? "You · " : "TinkerSpend · "}now</small></div>)}
+            {turns.map((turn) => <div className={`chat-message ${turn.from}`} key={turn.id}>
+              {turn.media?.type === "image" && <img className="chat-sent-image" src={turn.media.url} alt="Receipt sent in chat" />}
+              {turn.media?.type === "audio" && <VoiceMessage url={turn.media.url} durationMs={turn.media.durationMs ?? 0} seed={turn.id} />}
+              {turn.text && <p>{turn.text}</p>}
+              <small className="chat-time">{turn.from === "person" ? "You · " : "TinkerSpend · "}now <span aria-hidden="true">{turn.from === "person" ? "✓✓" : ""}</span></small>
+            </div>)}
+            {drafts.length > 0 && <div className="whatsapp-drafts"><p className="chat-day">EXPENSES TO REVIEW</p>{drafts.map((d) => <DraftCard key={`${d.id}-${d.version}`} d={d} onChanged={load} onSaved={(t) => { onSaved(t); void load(); }} onReextract={(t) => extractText(t, d.reference_at).then(() => api("POST", `/drafts/${d.id}/discard`)).then(load)} />)}</div>}
           </div>
-          {drafts.length === 0 && turns.length === 1 && <div className="chat-suggestions" aria-label="Try a message">
-            <span>TRY A MESSAGE</span>
-            <button type="button" className="chat-chip" onClick={() => setText("Yesterday I spent ₹540 on groceries at Reliance Fresh")}>Groceries yesterday</button>
-            <button type="button" className="chat-chip" onClick={() => setText("Paid ₹180 for coffee and snacks")}>Coffee and snacks</button>
-          </div>}
-          {photo && <div className="chat-attachment" aria-label="Receipt photo preview"><img src={photo.url} alt="Receipt to read" className="receipt-thumb" /><div><strong>Receipt photo ready</strong><span>Review its details before saving.</span></div><button type="button" disabled={photo.busy} onClick={readReceipt}>{photo.busy ? "Reading…" : "Read receipt"}</button><button type="button" className="secondary" disabled={photo.busy} onClick={() => { URL.revokeObjectURL(photo.url); setPhoto(null); }}>Remove</button></div>}
-          {rec.state === "recording" && <div className="chat-recording" role="status"><span className="recording-dot" /> Recording · {Math.floor(elapsed / 1000)}s / 60s <button type="button" onClick={() => void stopRec(rec.startedAt)}>Stop</button><button type="button" className="secondary" onClick={() => void cancelRec()}>Cancel</button></div>}
-          {(rec.state === "recorded" || rec.state === "uploading") && <div className="chat-recording" aria-label="Voice note preview"><audio controls src={rec.url} /><span className="muted">{(rec.durationMs / 1000).toFixed(1)}s</span><button type="button" disabled={rec.state === "uploading"} onClick={upload}>{rec.state === "uploading" ? "Transcribing…" : "Send voice note"}</button><button type="button" className="secondary" disabled={rec.state === "uploading"} onClick={() => void cancelRec()}>Remove</button></div>}
-        </div>
-        <form className="chat-compose" onSubmit={(e) => { e.preventDefault(); if (text.trim() && !busy) void extractText(text.trim(), Date.now()); }}>
-          <label className="sr-only" htmlFor="expense-message">Describe an expense</label>
-          <textarea id="expense-message" rows={1} maxLength={4000} value={text} onChange={(e) => setText(e.target.value)} placeholder="Message TinkerSpend… e.g. ₹450 dinner with friends" />
+          {rec.state === "recording" && <div className="recording-gesture" role="status"><span className="recording-dot" /> {Math.floor(elapsed / 1000)}s <span>← Slide to cancel · release to send</span></div>}
+          {err && <p role="alert" className="chat-notice chat-error">{err}</p>}
+          {info && <p className="chat-notice" role="status">{info}</p>}
+        </div>}
+
+        {photo ? <div className="photo-sendbar"><span>Receipt photo</span><button type="button" className="chat-send" aria-label="Send photo" disabled={photo.busy} onClick={() => void readReceipt()}>{photo.busy ? "…" : "➤"}</button></div> : <form className="chat-compose" onSubmit={(e) => { e.preventDefault(); if (text.trim() && !busy) void extractText(text.trim(), Date.now()); }}>
+          <div className="chat-attach-wrap"><button type="button" className="chat-tool chat-plus" aria-label="Open attachments" aria-expanded={attachMenu} title="Attach" onClick={() => setAttachMenu((open) => !open)}>＋</button>{attachMenu && <div className="chat-attach-menu" role="menu"><button type="button" role="menuitem" onClick={() => { setAttachMenu(false); document.getElementById("receipt-photo")?.click(); }}>Photos &amp; videos</button></div>}</div>
+          <input id="receipt-photo" hidden type="file" accept="image/jpeg,image/png" capture="environment" onChange={(e) => { void pickPhoto(e.target.files?.[0]); e.target.value = ""; }} />
+          <label className="sr-only" htmlFor="expense-message">Message</label>
+          <input id="expense-message" className="chat-text" type="text" maxLength={4000} value={text} onChange={(e) => setText(e.target.value)} placeholder="Message" autoComplete="off" />
+          {rec.state === "recorded" && <div className="voice-retry"><audio controls src={rec.url} /><button type="button" aria-label="Send voice message" onClick={() => void uploadRecording(rec)}>➤</button><button type="button" aria-label="Delete voice message" onClick={() => void cancelRec()}>×</button></div>}
+          {rec.state === "uploading" && <span className="chat-send-status" role="status">Sending voice message…</span>}
           <div className="chat-tools">
-            {rec.state === "idle" && <button type="button" className="chat-tool record-tool" aria-label="Record a voice note" title="Record a voice note" onClick={() => void startRec()}><svg viewBox="0 0 24 24" width="20" height="20" fill="none" aria-hidden="true"><rect x="9" y="3" width="6" height="12" rx="3" stroke="currentColor" strokeWidth="1.8"/><path d="M6 11a6 6 0 0 0 12 0M12 17v4m-4 0h8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg></button>}
-            <label className="chat-tool chat-upload" aria-label="Attach a receipt photo" title="Attach a receipt photo"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" aria-hidden="true"><rect x="3" y="5" width="18" height="15" rx="3" stroke="currentColor" strokeWidth="1.8"/><circle cx="8.5" cy="10" r="1.5" fill="currentColor"/><path d="m5 18 5-5 3 3 2-2 4 4" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"/></svg><input hidden type="file" accept="image/jpeg,image/png" capture="environment" onChange={(e) => { void pickPhoto(e.target.files?.[0]); e.target.value = ""; }} /></label>
-            <button type="submit" className="chat-send" aria-label="Send message" disabled={busy || !text.trim()}>{busy ? "…" : "↑"}</button>
+            {rec.state === "idle" && !text.trim() && <button type="button" className="chat-tool chat-camera" aria-label="Take or attach a receipt photo" title="Camera or gallery" onClick={() => document.getElementById("receipt-photo")?.click()}><svg viewBox="0 0 24 24" width="21" height="21" fill="none" aria-hidden="true"><path d="M4 7.5h3l1.5-2h7l1.5 2h3A1.5 1.5 0 0 1 21.5 9v9A1.5 1.5 0 0 1 20 19.5H4A1.5 1.5 0 0 1 2.5 18V9A1.5 1.5 0 0 1 4 7.5Z" stroke="currentColor" strokeWidth="1.7"/><circle cx="12" cy="13.5" r="3.5" stroke="currentColor" strokeWidth="1.7"/></svg></button>}
+            {rec.state === "idle" && (text.trim() ? <button type="submit" className="chat-send" aria-label="Send message" disabled={busy}>{busy ? "…" : "➤"}</button> : <button type="button" className={`chat-tool record-tool${recordingReady.current ? " recording" : ""}`} aria-label="Hold to record a voice message" title="Hold to record · release to send" aria-pressed={recordingReady.current} onContextMenu={(e) => e.preventDefault()} onPointerDown={(e) => { e.preventDefault(); e.currentTarget.setPointerCapture(e.pointerId); void beginHold(e.pointerId, e.clientX); }} onPointerMove={(e) => moveHold(e.pointerId, e.clientX)} onPointerUp={(e) => releaseHold(e.pointerId)} onPointerCancel={(e) => { if (hold.current.pointerId === e.pointerId) { hold.current.cancelled = true; void cancelRec(true); } }} onKeyDown={(e) => { if ((e.code === "Space" || e.code === "Enter") && !e.repeat) { e.preventDefault(); void beginHold(-1, 0); } }} onKeyUp={(e) => { if (e.code === "Space" || e.code === "Enter") { e.preventDefault(); releaseHold(-1); } }}><svg viewBox="0 0 24 24" width="21" height="21" fill="none" aria-hidden="true"><rect x="9" y="3" width="6" height="12" rx="3" stroke="currentColor" strokeWidth="1.8"/><path d="M6 11a6 6 0 0 0 12 0M12 17v4m-4 0h8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg></button>)}
           </div>
-        </form>
+        </form>}
       </div>
-      {err && <p role="alert" className="error assistant-error">{err}</p>}
-      {info && <p className="muted assistant-info" role="status">{info}</p>}
-      <p className="assistant-disclaimer">OpenAI extraction runs only when enabled for your account and the private API key is configured on the server. Otherwise TinkerSpend uses its built-in parser. Nothing reaches your ledger until you review and save a draft.</p>
-      {drafts.length > 0 && <div className="assistant-drafts"><h3>Your drafts <span>Review before saving</span></h3>{drafts.map((d) => <DraftCard key={`${d.id}-${d.version}`} d={d} onChanged={load} onSaved={(t) => { onSaved(t); void load(); }} onReextract={(t) => extractText(t, d.reference_at).then(() => api("POST", `/drafts/${d.id}/discard`)).then(load)} />)}</div>}
     </section>
   );
+}
+
+function VoiceMessage({ url, durationMs, seed }: { url: string; durationMs: number; seed: number }) {
+  const audio = useRef<HTMLAudioElement>(null);
+  const [playing, setPlaying] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [elapsed, setElapsed] = useState(0);
+  const bars = Array.from({ length: 30 }, (_, i) => 7 + ((i * 17 + seed * 13) % 19));
+  return <div className="voice-bubble">
+    <button type="button" className="voice-play" aria-label={playing ? "Pause voice message" : "Play voice message"} onClick={() => { const player = audio.current; if (!player) return; if (player.paused) void player.play(); else player.pause(); }}>{playing ? "Ⅱ" : "▶"}</button>
+    <span className="voice-wave" role="progressbar" aria-label="Voice message playback" aria-valuenow={Math.round(progress * 100)} aria-valuemin={0} aria-valuemax={100}>{bars.map((height, i) => <i key={i} style={{ height: `${height}px`, opacity: i / bars.length <= progress ? 1 : .6 }} />)}</span>
+    <small>{playing ? `${elapsed.toFixed(0)}s` : `${(durationMs / 1000).toFixed(0)}s`}</small>
+    <audio ref={audio} preload="metadata" src={url} onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)} onTimeUpdate={(e) => { const player = e.currentTarget; setElapsed(player.currentTime); setProgress(player.duration ? player.currentTime / player.duration : 0); }} onEnded={() => { setPlaying(false); setProgress(0); setElapsed(0); }} />
+  </div>;
 }
 
 function DraftCard({ d, onChanged, onSaved, onReextract }: { d: Draft; onChanged: () => void; onSaved: (t: Txn) => void; onReextract: (t: string) => void }) {

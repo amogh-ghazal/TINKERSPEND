@@ -3,12 +3,12 @@ import { login } from "./helpers";
 
 test("typed statement → two editable drafts → explicit save with paid confirmation", async ({ page }, info) => {
   await login(page, `drafts-${info.project.name}@e2e.test`);
-  await page.getByRole("button", { name: "Assistant", exact: true }).click();
-  const qa = page.getByRole("region", { name: "TinkerSpend expense assistant" });
-  await qa.getByLabel("Describe an expense").fill("Yesterday, lunch 180 and auto 80");
+  await page.getByRole("button", { name: "WhatsApp", exact: true }).click();
+  const qa = page.getByRole("region", { name: "WhatsApp concept demo" });
+  await qa.getByLabel("Message").fill("Yesterday, lunch 180 and auto 80");
   await qa.getByRole("button", { name: "Send message" }).click();
   await expect(qa.locator(".chat-message.person").last()).toContainText("Yesterday, lunch 180 and auto 80");
-  await expect(qa.locator(".chat-message.assistant").last()).toContainText("I prepared 2 editable drafts");
+  await expect(qa.locator(".chat-message.assistant").last()).toContainText("Added as a draft");
   const drafts = qa.getByTestId("draft");
   await expect(drafts).toHaveCount(2);
   const yesterday = await page.evaluate(() => { const d = new Date(Date.now() - 86_400_000); return new Intl.DateTimeFormat("en-CA", { timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone }).format(d); });
